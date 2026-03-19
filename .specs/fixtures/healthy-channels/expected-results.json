@@ -1,0 +1,16 @@
+{
+  "_comment": "SYNTHETIC fixture — constructed to test NC-OC-008 PASS state. Only Slack configured, probe.ok=true. No iMessage configured.",
+  "_synthetic": true,
+  "score_band": "amber",
+  "score_estimate": "100 - 10 (NC-OC-003 high) - 10 (NC-AUTH-001 high) = 80, AMBER (using normal security-audit)",
+  "stable_controls": {
+    "NC-OC-003": { "result": "FAIL", "severity": "high" },
+    "NC-OC-004": { "result": "PASS" },
+    "NC-OC-008": { "result": "PASS", "note": "All configured channels (Slack only) have probe.ok=true" },
+    "NC-OC-009": { "result": "PASS" },
+    "NC-AUTH-001": { "result": "FAIL", "severity": "high" },
+    "NC-VERS-001": { "result": "PASS" },
+    "NC-VERS-002": { "result": "PASS" }
+  },
+  "key_validation": "Validates NC-OC-008 PASS when all configured channels are healthy. Proves channel health check correctly evaluates to PASS when probe succeeds."
+}

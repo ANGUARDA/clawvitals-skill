@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "ts": 1773838019241,
+  "durationMs": 259,
+  "channels": {
+    "slack": {
+      "configured": true,
+      "running": false,
+      "probe": { "ok": true, "status": 200, "elapsedMs": 184 },
+      "lastProbeAt": 1773838019172
+    },
+    "imessage": {
+      "configured": true,
+      "running": false,
+      "probe": { "ok": false, "error": "Error: imsg rpc exited (code 1)" },
+      "lastProbeAt": 1773838019241
+    }
+  },
+  "channelOrder": ["slack", "imessage"],
+  "heartbeatSeconds": 1800,
+  "defaultAgentId": "main",
+  "agents": [{ "agentId": "main", "isDefault": true }]
+}

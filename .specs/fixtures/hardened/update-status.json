@@ -1,0 +1,30 @@
+{
+  "update": {
+    "root": "/opt/homebrew/lib/node_modules/openclaw",
+    "installKind": "package",
+    "packageManager": "pnpm",
+    "deps": {
+      "manager": "pnpm",
+      "status": "unknown",
+      "lockfilePath": "/opt/homebrew/lib/node_modules/openclaw/pnpm-lock.yaml",
+      "markerPath": "/opt/homebrew/lib/node_modules/openclaw/node_modules/.modules.yaml",
+      "reason": "lockfile missing"
+    },
+    "registry": {
+      "latestVersion": "2026.3.13"
+    }
+  },
+  "channel": {
+    "value": "stable",
+    "source": "default",
+    "label": "stable (default)",
+    "config": null
+  },
+  "availability": {
+    "available": false,
+    "hasGitUpdate": false,
+    "hasRegistryUpdate": false,
+    "latestVersion": null,
+    "gitBehind": null
+  }
+}

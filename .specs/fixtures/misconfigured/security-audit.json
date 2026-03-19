@@ -1,0 +1,58 @@
+{
+  "ts": 1773856449637,
+  "summary": {
+    "critical": 4,
+    "warn": 2,
+    "info": 1
+  },
+  "findings": [
+    {
+      "checkId": "summary.attack_surface",
+      "severity": "info",
+      "title": "Attack surface summary",
+      "detail": "groups: open=1, allowlist=0\ntools.elevated: enabled\nhooks.webhooks: disabled\nhooks.internal: enabled\nbrowser control: enabled\ntrust model: personal assistant (one trusted operator boundary), not hostile multi-tenant on one shared gateway"
+    },
+    {
+      "checkId": "gateway.trusted_proxies_missing",
+      "severity": "warn",
+      "title": "Reverse proxy headers are not trusted",
+      "detail": "gateway.bind is loopback and gateway.trustedProxies is empty. If you expose the Control UI through a reverse proxy, configure trusted proxies so local-client checks cannot be spoofed.",
+      "remediation": "Set gateway.trustedProxies to your proxy IPs or keep the Control UI local-only."
+    },
+    {
+      "checkId": "gateway.loopback_no_auth",
+      "severity": "critical",
+      "title": "Gateway auth missing on loopback",
+      "detail": "gateway.bind is loopback but no gateway auth secret is configured. If the Control UI is exposed through a reverse proxy, unauthenticated access is possible.",
+      "remediation": "Set gateway.auth (token recommended) or keep the Control UI local-only."
+    },
+    {
+      "checkId": "browser.control_no_auth",
+      "severity": "critical",
+      "title": "Browser control has no auth",
+      "detail": "Browser control HTTP routes are enabled but no gateway.auth token/password is configured. Any local process (or SSRF to loopback) can call browser control endpoints.",
+      "remediation": "Set gateway.auth.token (recommended) or gateway.auth.password so browser control HTTP routes require authentication. Restarting the gateway will auto-generate gateway.auth.token when browser control is enabled."
+    },
+    {
+      "checkId": "security.exposure.open_groups_with_elevated",
+      "severity": "critical",
+      "title": "Open groupPolicy with elevated tools enabled",
+      "detail": "Found groupPolicy=\"open\" at:\n- channels.slack.groupPolicy\nWith tools.elevated enabled, a prompt injection in those rooms can become a high-impact incident.",
+      "remediation": "Set groupPolicy=\"allowlist\" and keep elevated allowlists extremely tight."
+    },
+    {
+      "checkId": "security.exposure.open_groups_with_runtime_or_fs",
+      "severity": "critical",
+      "title": "Open groupPolicy with runtime/filesystem tools exposed",
+      "detail": "Found groupPolicy=\"open\" at:\n- channels.slack.groupPolicy\nRisky tool exposure contexts:\n- agents.defaults (sandbox=off; runtime=[exec, process]; fs=[read, write, edit, apply_patch]; fs.workspaceOnly=false)\nPrompt injection in open groups can trigger command/file actions in these contexts.",
+      "remediation": "For open groups, prefer tools.profile=\"messaging\" (or deny group:runtime/group:fs), set tools.fs.workspaceOnly=true, and use agents.defaults.sandbox.mode=\"all\" for exposed agents."
+    },
+    {
+      "checkId": "security.trust_model.multi_user_heuristic",
+      "severity": "warn",
+      "title": "Potential multi-user setup detected (personal-assistant model warning)",
+      "detail": "Heuristic signals indicate this gateway may be reachable by multiple users:\n- channels.slack.groupPolicy=\"open\"\nRuntime/process tools are exposed without full sandboxing in at least one context.\nPotential high-impact tool exposure contexts:\n- agents.defaults (sandbox=off; runtime=[exec, process]; fs=[read, write, edit, apply_patch]; fs.workspaceOnly=false)\nOpenClaw's default security model is personal-assistant (one trusted operator boundary), not hostile multi-tenant isolation on one shared gateway.",
+      "remediation": "If users may be mutually untrusted, split trust boundaries (separate gateways + credentials, ideally separate OS users/hosts). If you intentionally run shared-user access, set agents.defaults.sandbox.mode=\"all\", keep tools.fs.workspaceOnly=true, deny runtime/fs/web tools unless required, and keep personal/private identities + credentials off that runtime."
+    }
+  ]
+}

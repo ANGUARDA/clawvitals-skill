@@ -1,0 +1,23 @@
+{
+  "ts": 1773856700243,
+  "summary": {
+    "critical": 0,
+    "warn": 1,
+    "info": 1
+  },
+  "findings": [
+    {
+      "checkId": "summary.attack_surface",
+      "severity": "info",
+      "title": "Attack surface summary",
+      "detail": "groups: open=0, allowlist=1\ntools.elevated: enabled\nhooks.webhooks: disabled\nhooks.internal: disabled\nbrowser control: enabled\ntrust model: personal assistant (one trusted operator boundary), not hostile multi-tenant on one shared gateway"
+    },
+    {
+      "checkId": "gateway.nodes.deny_commands_ineffective",
+      "severity": "warn",
+      "title": "Some gateway.nodes.denyCommands entries are ineffective",
+      "detail": "gateway.nodes.denyCommands uses exact node command-name matching only (for example `system.run`), not shell-text filtering inside a command payload.\n- Unknown command names (not in defaults/allowCommands): camera.snap (did you mean: camera.list), screen.record, sms.send",
+      "remediation": "Use exact command names (for example: canvas.present, canvas.hide, canvas.navigate, canvas.eval, canvas.snapshot, canvas.a2ui.push, canvas.a2ui.pushJSONL, canvas.a2ui.reset). If you need broader restrictions, remove risky command IDs from allowCommands/default workflows and tighten tools.exec policy."
+    }
+  ]
+}

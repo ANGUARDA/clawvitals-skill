@@ -1,0 +1,22 @@
+{
+  "_comment": "Expected Dock evaluation results for the HARDENED fixture. Captured: 2026-03-18, OpenClaw 2026.3.13, --profile hardened. Config: channels.slack.groupPolicy=allowlist, gateway.auth.token set.",
+  "score_band": "amber",
+  "stable_controls": {
+    "NC-OC-003": { "result": "PASS", "note": "deny_commands_ineffective not present in this profile" },
+    "NC-OC-004": { "result": "PASS", "note": "groups.open=0" },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium", "note": "imessage probe.ok=false (same running gateway — expected on this install)" },
+    "NC-OC-009": { "result": "PASS", "note": "availability.hasRegistryUpdate=false" },
+    "NC-AUTH-001": { "result": "FAIL", "severity": "high", "checkId": "gateway.trusted_proxies_missing", "note": "Still fires because trustedProxies not configured — profile has auth but no proxy setup" },
+    "NC-VERS-001": { "result": "PASS", "note": "availability.hasRegistryUpdate=false" },
+    "NC-VERS-002": { "result": "PASS", "note": "on latest version 2026.3.13" }
+  },
+  "experimental_controls": {
+    "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled — prerequisite not met" },
+    "NC-OC-002": { "result": "PASS", "note": "security.trust_model.multi_user_heuristic NOT present in this profile" },
+    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt still fires" },
+    "NC-OC-006": { "result": "PASS", "note": "multi_user_heuristic not present, so SKIPPED/PASS" }
+  },
+  "score_estimate": "100 - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 85, AMBER",
+  "new_checkIds_discovered": [],
+  "notes": "Hardened profile scores Amber, not Green, because gateway.trusted_proxies_missing still fires (proxy trust is always warned if trustedProxies not explicitly set, regardless of auth config). To achieve Green: configure trustedProxies and fix iMessage. NC-AUTH-001 is expected on loopback-only installs that don't use a reverse proxy — may need a 'local-only' acknowledgement mechanism in a future Dock version."
+}

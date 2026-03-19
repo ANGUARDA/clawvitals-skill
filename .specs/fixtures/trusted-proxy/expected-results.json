@@ -1,0 +1,21 @@
+{
+  "_comment": "Near-Green fixture. groupPolicy=allowlist, gateway auth set, trustedProxies configured. Only remaining finding: iMessage probe (NC-OC-008). Captured live 2026-03-18.",
+  "score_band": "green",
+  "score_estimate": "100 - 5 (NC-OC-008 medium) = 95, GREEN",
+  "stable_controls": {
+    "NC-OC-003": { "result": "PASS" },
+    "NC-OC-004": { "result": "PASS", "note": "groups.open=0" },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium", "note": "iMessage probe.ok=false — expected on this install" },
+    "NC-OC-009": { "result": "PASS" },
+    "NC-AUTH-001": { "result": "PASS", "note": "gateway.trusted_proxies_missing NOT present — trustedProxies configured" },
+    "NC-VERS-001": { "result": "PASS" },
+    "NC-VERS-002": { "result": "PASS" }
+  },
+  "experimental_controls": {
+    "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled" },
+    "NC-OC-002": { "result": "PASS", "note": "multi_user_heuristic NOT present" },
+    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled" },
+    "NC-OC-006": { "result": "PASS", "note": "multi_user_heuristic not present" }
+  },
+  "key_validation": "This fixture validates that NC-AUTH-001 correctly PASSES when trustedProxies is configured. Proves the control can reach PASS state."
+}

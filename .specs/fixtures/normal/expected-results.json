@@ -1,0 +1,21 @@
+{
+  "_comment": "Expected Dock evaluation results for the NORMAL fixture. Captured: 2026-03-18, OpenClaw 2026.3.13.",
+  "score_band": "amber",
+  "stable_controls": {
+    "NC-OC-003": { "result": "FAIL", "severity": "high", "checkId": "gateway.nodes.deny_commands_ineffective" },
+    "NC-OC-004": { "result": "PASS", "note": "groups.open=0" },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium", "note": "imessage probe.ok=false" },
+    "NC-OC-009": { "result": "FAIL", "severity": "info", "note": "update available check — no update in this fixture, so PASS" },
+    "NC-AUTH-001": { "result": "FAIL", "severity": "high", "checkId": "gateway.trusted_proxies_missing" },
+    "NC-VERS-001": { "result": "PASS", "note": "availability.hasRegistryUpdate=false" },
+    "NC-VERS-002": { "result": "PASS", "note": "on latest version 2026.3.13" }
+  },
+  "experimental_controls": {
+    "NC-OC-002": { "result": "FAIL", "note": "security.trust_model.multi_user_heuristic present" },
+    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt" },
+    "NC-OC-006": { "result": "FAIL", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" }
+  },
+  "score_estimate": "100 - 10 (NC-OC-003 high) - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 75, Amber",
+  "new_checkIds_discovered": [],
+  "notes": "NC-OC-001 SKIPPED — hooks.webhooks=disabled in attack_surface detail. NC-OC-009 PASS (no update available). health.json shows iMessage probe failing — this is expected on this install."
+}

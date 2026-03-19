@@ -1,0 +1,45 @@
+{
+  "_comment": "Expected Dock evaluation results for the MISCONFIGURED fixture. Captured: 2026-03-18, OpenClaw 2026.3.13, --profile misconfigured. Config: channels.slack.groupPolicy=open, no gateway auth, hooks.internal enabled.",
+  "score_band": "red",
+  "stable_controls": {
+    "NC-OC-003": { "result": "PASS", "note": "deny_commands_ineffective not present in this profile — no denyCommands configured" },
+    "NC-OC-004": { "result": "FAIL", "severity": "critical", "note": "groups.open=1 AND security.exposure.open_groups_with_elevated + open_groups_with_runtime_or_fs checkIds present", "checkIds": ["security.exposure.open_groups_with_elevated", "security.exposure.open_groups_with_runtime_or_fs"] },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium", "note": "imessage probe.ok=false (same running gateway)" },
+    "NC-OC-009": { "result": "PASS", "note": "availability.hasRegistryUpdate=false" },
+    "NC-AUTH-001": { "result": "FAIL", "severity": "high", "checkId": "gateway.trusted_proxies_missing" },
+    "NC-VERS-001": { "result": "PASS", "note": "availability.hasRegistryUpdate=false" },
+    "NC-VERS-002": { "result": "PASS", "note": "on latest version 2026.3.13" }
+  },
+  "experimental_controls": {
+    "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled — prerequisite not met" },
+    "NC-OC-002": { "result": "FAIL", "note": "security.trust_model.multi_user_heuristic present" },
+    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt" },
+    "NC-OC-006": { "result": "FAIL", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" },
+    "NC-OC-007_new": { "result": "FAIL", "note": "gateway.loopback_no_auth — new checkId not yet in control library" },
+    "browser_new": { "result": "FAIL", "note": "browser.control_no_auth — new checkId not yet in control library" }
+  },
+  "score_estimate": "100 - 25 (NC-OC-004 critical, open_groups checkIds) - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 60, RED",
+  "new_checkIds_discovered": [
+    {
+      "checkId": "security.exposure.open_groups_with_elevated",
+      "severity": "critical",
+      "note": "New critical checkId — fires when groupPolicy=open AND tools.elevated=enabled. Should become a new NC-OC control or be incorporated into NC-OC-004."
+    },
+    {
+      "checkId": "security.exposure.open_groups_with_runtime_or_fs",
+      "severity": "critical",
+      "note": "New critical checkId — fires when groupPolicy=open AND runtime/fs tools are exposed. Should become a new NC-OC control or be incorporated into NC-OC-004."
+    },
+    {
+      "checkId": "gateway.loopback_no_auth",
+      "severity": "critical",
+      "note": "New critical checkId — fires when gateway has no auth token. Not in current control library. Add as NC-OC-010 or similar."
+    },
+    {
+      "checkId": "browser.control_no_auth",
+      "severity": "critical",
+      "note": "New critical checkId — fires when browser control is enabled without gateway auth. Not in current control library. Add as NC-OC-011 or similar."
+    }
+  ],
+  "notes": "This fixture revealed 4 new checkIds not in the v0.1 control library. NC-OC-001 remains SKIPPED — hooks.webhooks is an internal OpenClaw webhook receiver, not user-configurable via standard config. NC-OC-001 design needs revisiting."
+}

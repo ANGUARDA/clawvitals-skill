@@ -1,0 +1,16 @@
+{
+  "_comment": "SYNTHETIC fixture — constructed to test NC-VERS-002 FAIL state. Installed 2026.3.13, latest 2026.6.0 (3 minor versions behind — exceeds 2-minor threshold).",
+  "_synthetic": true,
+  "score_band": "amber",
+  "score_estimate": "100 - 5 (NC-VERS-001 medium) - 5 (NC-VERS-002 medium) - 10 (NC-OC-003 high) - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 65, RED (just under 70 threshold)",
+  "stable_controls": {
+    "NC-OC-003": { "result": "FAIL", "severity": "high" },
+    "NC-OC-004": { "result": "PASS" },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium" },
+    "NC-OC-009": { "result": "FAIL", "severity": "info" },
+    "NC-AUTH-001": { "result": "FAIL", "severity": "high" },
+    "NC-VERS-001": { "result": "FAIL", "severity": "medium", "note": "hasRegistryUpdate=true" },
+    "NC-VERS-002": { "result": "FAIL", "severity": "medium", "note": "3 minor versions behind (2026.3 vs 2026.6) — exceeds 2-minor threshold" }
+  },
+  "key_validation": "Validates NC-VERS-002 FAIL when more than 2 minor versions behind. Version comparison: installed=2026.3.13, latest=2026.6.0, minor delta=3 > 2 threshold."
+}

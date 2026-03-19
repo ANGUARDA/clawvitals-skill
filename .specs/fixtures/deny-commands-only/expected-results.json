@@ -1,0 +1,28 @@
+{
+  "_comment": "Isolates NC-OC-003. gateway.nodes.deny_commands_ineffective is the only security finding. All other controls pass. Captured live 2026-03-18. Also discovered gateway.token_too_short checkId (new — not in control library).",
+  "score_band": "amber",
+  "score_estimate": "100 - 10 (NC-OC-003 high) - 5 (NC-OC-008 medium) = 85, AMBER",
+  "stable_controls": {
+    "NC-OC-003": { "result": "FAIL", "severity": "high", "checkId": "gateway.nodes.deny_commands_ineffective" },
+    "NC-OC-004": { "result": "PASS" },
+    "NC-OC-008": { "result": "FAIL", "severity": "medium", "note": "iMessage probe.ok=false" },
+    "NC-OC-009": { "result": "PASS" },
+    "NC-AUTH-001": { "result": "PASS", "note": "trustedProxies configured" },
+    "NC-VERS-001": { "result": "PASS" },
+    "NC-VERS-002": { "result": "PASS" }
+  },
+  "experimental_controls": {
+    "NC-OC-001": { "result": "SKIPPED" },
+    "NC-OC-002": { "result": "PASS" },
+    "NC-OC-005": { "result": "INFO" },
+    "NC-OC-006": { "result": "PASS" }
+  },
+  "new_checkIds_discovered": [
+    {
+      "checkId": "gateway.token_too_short",
+      "severity": "warn",
+      "note": "Fires when gateway auth token is below minimum length. Discovered when using a short test token. Not in v0.1 control library — add as NC-OC-014 or similar."
+    }
+  ],
+  "key_validation": "Isolates NC-OC-003 (deny_commands_ineffective) — proves control correctly FAILs when ineffective deny command names are configured."
+}

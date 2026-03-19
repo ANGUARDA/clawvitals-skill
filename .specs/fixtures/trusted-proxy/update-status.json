@@ -1,0 +1,11 @@
+{
+  "update": {
+    "root": "/opt/homebrew/lib/node_modules/openclaw",
+    "installKind": "package",
+    "packageManager": "pnpm",
+    "deps": { "manager": "pnpm", "status": "unknown", "reason": "lockfile missing" },
+    "registry": { "latestVersion": "2026.3.13" }
+  },
+  "channel": { "value": "stable", "source": "default", "label": "stable (default)" },
+  "availability": { "available": false, "hasRegistryUpdate": false, "latestVersion": null }
+}

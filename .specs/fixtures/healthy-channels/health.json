@@ -1,0 +1,19 @@
+{
+  "_synthetic": true,
+  "_note": "Constructed to represent a fully healthy channel state (all configured channels probe OK). Based on real schema.",
+  "ok": true,
+  "ts": 1773838019241,
+  "durationMs": 120,
+  "channels": {
+    "slack": {
+      "configured": true,
+      "running": false,
+      "probe": { "ok": true, "status": 200, "elapsedMs": 100 },
+      "lastProbeAt": 1773838019172
+    }
+  },
+  "channelOrder": ["slack"],
+  "heartbeatSeconds": 1800,
+  "defaultAgentId": "main",
+  "agents": [{ "agentId": "main", "isDefault": true }]
+}

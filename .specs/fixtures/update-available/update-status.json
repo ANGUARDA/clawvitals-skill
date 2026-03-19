@@ -1,0 +1,13 @@
+{
+  "_synthetic": true,
+  "_note": "Constructed to represent an install where a registry update is available. Based on real schema from 2026.3.13.",
+  "update": {
+    "root": "/opt/homebrew/lib/node_modules/openclaw",
+    "installKind": "package",
+    "packageManager": "pnpm",
+    "deps": { "manager": "pnpm", "status": "unknown", "reason": "lockfile missing" },
+    "registry": { "latestVersion": "2026.4.1" }
+  },
+  "channel": { "value": "stable", "source": "default", "label": "stable (default)" },
+  "availability": { "available": true, "hasRegistryUpdate": true, "latestVersion": "2026.4.1" }
+}
