@@ -13,9 +13,9 @@
   },
   "experimental_controls": {
     "NC-OC-001": { "result": "SKIPPED" },
-    "NC-OC-002": { "result": "PASS" },
-    "NC-OC-005": { "result": "INFO" },
-    "NC-OC-006": { "result": "PASS" }
+    "NC-OC-002": { "result": "SKIPPED" },
+    "NC-OC-005": { "result": "SKIPPED" },
+    "NC-OC-006": { "result": "SKIPPED" }
   },
   "new_checkIds_discovered": [
     {

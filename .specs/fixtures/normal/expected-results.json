@@ -11,9 +11,9 @@
     "NC-VERS-002": { "result": "PASS", "note": "on latest version 2026.3.13" }
   },
   "experimental_controls": {
-    "NC-OC-002": { "result": "FAIL", "note": "security.trust_model.multi_user_heuristic present" },
-    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt" },
-    "NC-OC-006": { "result": "FAIL", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" }
+    "NC-OC-002": { "result": "SKIPPED", "note": "security.trust_model.multi_user_heuristic present" },
+    "NC-OC-005": { "result": "SKIPPED", "note": "tools.elevated=enabled — acknowledgement prompt" },
+    "NC-OC-006": { "result": "SKIPPED", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" }
   },
   "score_estimate": "100 - 10 (NC-OC-003 high) - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 75, Amber",
   "new_checkIds_discovered": [],

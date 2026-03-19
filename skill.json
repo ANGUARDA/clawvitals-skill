@@ -1,0 +1,72 @@
+{
+  "name": "clawvitals",
+  "version": "0.1.0",
+  "displayName": "ClawVitals",
+  "description": "Security health check and recurring assessment for OpenClaw installations. Finds real issues, tracks posture over time, alerts on regressions.",
+  "author": "Anguarda",
+  "license": "Apache-2.0",
+  "homepage": "https://clawvitals.io",
+  "repository": "https://github.com/ANGUARDA/Portfolio",
+  "minOpenClawVersion": "2026.3.0",
+  "controlLibraryVersion": "0.1.0",
+  "controlLibraryVersionRange": ">=0.1.0 <0.2.0",
+  "permissions": [
+    "exec:openclaw:security-audit",
+    "exec:openclaw:health",
+    "exec:openclaw:update",
+    "exec:openclaw:version",
+    "exec:openclaw:cron",
+    "filesystem:workspace",
+    "network:outbound:telemetry.clawvitals.io",
+    "network:outbound:api.clawvitals.io"
+  ],
+  "intents": [
+    {
+      "pattern": ["run clawvitals", "clawvitals scan", "check clawvitals", "clawvitals check"],
+      "handler": "handleScan"
+    },
+    {
+      "pattern": ["show clawvitals details", "clawvitals full report", "clawvitals details"],
+      "handler": "handleDetail"
+    },
+    {
+      "pattern": ["clawvitals history"],
+      "handler": "handleHistory"
+    },
+    {
+      "pattern": [
+        "clawvitals schedule",
+        "clawvitals setup schedule",
+        "clawvitals schedule daily",
+        "clawvitals schedule weekly",
+        "clawvitals schedule monthly",
+        "clawvitals schedule off"
+      ],
+      "handler": "handleSchedule"
+    },
+    {
+      "pattern": ["clawvitals telemetry on", "clawvitals telemetry off"],
+      "handler": "handleTelemetry"
+    },
+    {
+      "pattern": ["clawvitals exclude *", "clawvitals exclusions"],
+      "handler": "handleExclusions"
+    },
+    {
+      "pattern": ["clawvitals link *"],
+      "handler": "handleLink"
+    },
+    {
+      "pattern": ["clawvitals config *"],
+      "handler": "handleConfig"
+    },
+    {
+      "pattern": ["clawvitals status"],
+      "handler": "handleStatus"
+    }
+  ],
+  "cron": {
+    "jobName": "clawvitals:scheduled-scan",
+    "handler": "handleScheduledScan"
+  }
+}
