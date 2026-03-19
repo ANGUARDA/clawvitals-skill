@@ -23,6 +23,7 @@ export class TelemetryClient {
    */
   async ping(report: RunReport, usage: UsageState, config: ClawVitalsConfig): Promise<void> {
     if (!config.telemetry_enabled) return;
+    if (!config.telemetry_endpoint.startsWith('https://')) return;
 
     try {
       const params = new URLSearchParams({

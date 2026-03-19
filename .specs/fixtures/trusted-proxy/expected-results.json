@@ -13,9 +13,9 @@
   },
   "experimental_controls": {
     "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled" },
-    "NC-OC-002": { "result": "PASS", "note": "multi_user_heuristic NOT present" },
-    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled" },
-    "NC-OC-006": { "result": "PASS", "note": "multi_user_heuristic not present" }
+    "NC-OC-002": { "result": "SKIPPED", "note": "multi_user_heuristic NOT present" },
+    "NC-OC-005": { "result": "SKIPPED", "note": "tools.elevated=enabled" },
+    "NC-OC-006": { "result": "SKIPPED", "note": "multi_user_heuristic not present" }
   },
   "key_validation": "This fixture validates that NC-AUTH-001 correctly PASSES when trustedProxies is configured. Proves the control can reach PASS state."
 }

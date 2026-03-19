@@ -34,13 +34,13 @@ export class SchedulerManager {
     const exists = await this.isScheduled();
 
     if (exists) {
-      await this.cli.run('openclaw', [
+      await this.cli.run([
         'cron', 'edit',
         '--name', CRON_JOB_NAME,
         '--cron', cronExpr,
       ]);
     } else {
-      await this.cli.run('openclaw', [
+      await this.cli.run([
         'cron', 'add',
         '--name', CRON_JOB_NAME,
         '--cron', cronExpr,
@@ -55,7 +55,7 @@ export class SchedulerManager {
   async removeSchedule(): Promise<void> {
     const exists = await this.isScheduled();
     if (exists) {
-      await this.cli.run('openclaw', ['cron', 'remove', '--name', CRON_JOB_NAME]);
+      await this.cli.run(['cron', 'remove', '--name', CRON_JOB_NAME]);
     }
   }
 
@@ -66,7 +66,7 @@ export class SchedulerManager {
    */
   async isScheduled(): Promise<boolean> {
     try {
-      const result = await this.cli.run('openclaw', ['cron', 'list']);
+      const result = await this.cli.run(['cron', 'list']);
       return result.stdout.includes(CRON_JOB_NAME);
     } catch {
       return false;

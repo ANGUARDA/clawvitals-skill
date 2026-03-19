@@ -25,6 +25,7 @@ function makeEval(overrides: Partial<ControlEvaluation>): ControlEvaluation {
     exclusion_expires: null,
     error_detail: null,
     skip_reason: null,
+    introduced_in: '0.1.0',
     ...overrides,
   };
 }
@@ -187,20 +188,37 @@ describe('DeltaDetector', () => {
   });
 
   describe('new checks', () => {
-    it('should detect a new control not in the previous scan', () => {
+    it('should detect a new control not in the previous scan as new_check when introduced_in > previous library_version', () => {
       const previous = makeReport([
         makeEval({ control_id: 'NC-OC-003', result: 'PASS' }),
       ]);
 
       const current = makeReport([
         makeEval({ control_id: 'NC-OC-003', result: 'PASS' }),
-        makeEval({ control_id: 'NC-NEW-001', result: 'FAIL' }),
+        makeEval({ control_id: 'NC-NEW-001', result: 'FAIL', introduced_in: '0.2.0' }),
       ]);
 
       const result = detector.detect(current, previous);
 
       expect(result.new_checks).toHaveLength(1);
       expect(result.new_checks[0]!.control_id).toBe('NC-NEW-001');
+    });
+
+    it('should classify a new control as new_finding when introduced_in <= previous library_version', () => {
+      const previous = makeReport([
+        makeEval({ control_id: 'NC-OC-003', result: 'PASS' }),
+      ]);
+
+      const current = makeReport([
+        makeEval({ control_id: 'NC-OC-003', result: 'PASS' }),
+        makeEval({ control_id: 'NC-OLD-001', result: 'FAIL', introduced_in: '0.1.0' }),
+      ]);
+
+      const result = detector.detect(current, previous);
+
+      expect(result.new_findings).toHaveLength(1);
+      expect(result.new_findings[0]!.control_id).toBe('NC-OLD-001');
+      expect(result.new_checks).toHaveLength(0);
     });
 
     it('should not flag a new control that PASSes as a new check', () => {
@@ -210,7 +228,7 @@ describe('DeltaDetector', () => {
 
       const current = makeReport([
         makeEval({ control_id: 'NC-OC-003', result: 'PASS' }),
-        makeEval({ control_id: 'NC-NEW-001', result: 'PASS' }),
+        makeEval({ control_id: 'NC-NEW-001', result: 'PASS', introduced_in: '0.2.0' }),
       ]);
 
       const result = detector.detect(current, previous);

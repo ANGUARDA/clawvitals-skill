@@ -39,7 +39,7 @@ export async function collectSecurityAudit(
   cli: CliRunner
 ): Promise<SourceResult<SecurityAuditOutput>> {
   try {
-    const result = await cli.run('openclaw', ['security', 'audit', '--json']);
+    const result = await cli.run(['security', 'audit', '--json']);
     const parsed = JSON.parse(result.stdout) as unknown;
     const validated = SecurityAuditSchema.parse(parsed);
     return {

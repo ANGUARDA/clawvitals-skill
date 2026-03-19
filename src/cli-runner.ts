@@ -71,41 +71,49 @@ export interface CliRunResult {
  * - All invocations are logged for debugging
  */
 export class CliRunner {
+  private readonly binary: string;
+
+  /**
+   * Create a CliRunner for a specific binary.
+   *
+   * @param binary - The binary to execute (must be in ALLOWED_BINARIES)
+   * @throws CliDisallowedBinaryError if the binary is not in the allowlist
+   */
+  constructor(binary: string) {
+    if (!ALLOWED_BINARIES.includes(binary)) {
+      throw new CliDisallowedBinaryError(binary);
+    }
+    this.binary = binary;
+  }
+
   /**
    * Execute a CLI command with security controls.
    *
-   * @param command - The binary to execute (must be in ALLOWED_BINARIES)
    * @param args - Arguments as a string array (never interpolated)
    * @param options - Timeout and parsing options
    * @returns The command's stdout, stderr, and exit code
-   * @throws CliDisallowedBinaryError if the binary is not allowed
    * @throws CliTimeoutError if the command exceeds the timeout
    * @throws CliExecError if the command exits with a non-zero code
    */
   async run(
-    command: string,
     args: string[],
     options: CliRunOptions = {}
   ): Promise<CliRunResult> {
-    if (!ALLOWED_BINARIES.includes(command)) {
-      throw new CliDisallowedBinaryError(command);
-    }
-
     const timeoutMs = options.timeoutMs ?? CLI_TIMEOUT_MS;
 
     return new Promise<CliRunResult>((resolve, reject) => {
       const child = execFile(
-        command,
+        this.binary,
         args,
         { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
         (error, stdout, stderr) => {
           if (error) {
             if ('killed' in error && error.killed) {
-              reject(new CliTimeoutError(`${command} ${args.join(' ')}`, timeoutMs));
+              reject(new CliTimeoutError(`${this.binary} ${args.join(' ')}`, timeoutMs));
               return;
             }
             const exitCode = 'code' in error && typeof error.code === 'number' ? error.code : 1;
-            reject(new CliExecError(`${command} ${args.join(' ')}`, exitCode, stderr));
+            reject(new CliExecError(`${this.binary} ${args.join(' ')}`, exitCode, stderr));
             return;
           }
           resolve({ stdout, stderr, exitCode: 0 });
@@ -114,7 +122,7 @@ export class CliRunner {
 
       /* istanbul ignore next — defensive cleanup for edge cases */
       child.on('error', (err) => {
-        reject(new CliExecError(`${command} ${args.join(' ')}`, 1, err.message));
+        reject(new CliExecError(`${this.binary} ${args.join(' ')}`, 1, err.message));
       });
     });
   }

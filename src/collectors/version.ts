@@ -19,7 +19,7 @@ export async function collectVersion(
   cli: CliRunner
 ): Promise<VersionResult> {
   try {
-    const result = await cli.run('openclaw', ['--version']);
+    const result = await cli.run(['--version']);
     const match = VERSION_REGEX.exec(result.stdout.trim());
     if (!match?.[1]) {
       return {

@@ -25,6 +25,7 @@ function makeEval(overrides: Partial<ControlEvaluation>): ControlEvaluation {
     exclusion_expires: null,
     error_detail: null,
     skip_reason: null,
+    introduced_in: '0.1.0',
     ...overrides,
   };
 }
@@ -97,6 +98,20 @@ describe('Scorer', () => {
 
       expect(result.score).toBe(95);
       expect(result.band).toBe('green');
+    });
+
+    it('should deduct 2 points for a low-severity failure', () => {
+      const evaluations = [
+        makeEval({ control_id: 'NC-1', result: 'FAIL', severity: 'low' }),
+        makeEval({ control_id: 'NC-2', result: 'PASS' }),
+        makeEval({ control_id: 'NC-3', result: 'PASS' }),
+        makeEval({ control_id: 'NC-4', result: 'PASS' }),
+        makeEval({ control_id: 'NC-5', result: 'PASS' }),
+      ];
+
+      const result = scorer.score(evaluations);
+
+      expect(result.score).toBe(98);
     });
 
     it('should deduct 0 points for info-level failure', () => {

@@ -55,10 +55,14 @@ export class DeltaDetector {
     for (const currentEval of allCurrentFindings) {
       const prevEval = previousMap.get(currentEval.control_id);
 
-      // New check: control was introduced after the previous library version
       if (!prevEval) {
         if (currentEval.result === 'FAIL') {
-          newChecks.push(currentEval);
+          // Distinguish new_check vs new_finding using introduced_in semver
+          if (this.semverGreaterThan(currentEval.introduced_in, previous.library_version)) {
+            newChecks.push(currentEval);
+          } else {
+            newFindings.push(currentEval);
+          }
         }
         continue;
       }
@@ -80,5 +84,22 @@ export class DeltaDetector {
     }
 
     return { new_findings: newFindings, resolved_findings: resolvedFindings, new_checks: newChecks };
+  }
+
+  /**
+   * Compare two semver strings (a > b).
+   * Splits on '.', compares each numeric component left-to-right.
+   */
+  private semverGreaterThan(a: string, b: string): boolean {
+    const aParts = a.split('.').map(Number);
+    const bParts = b.split('.').map(Number);
+    const len = Math.max(aParts.length, bParts.length);
+    for (let i = 0; i < len; i++) {
+      const av = aParts[i] ?? 0;
+      const bv = bParts[i] ?? 0;
+      if (av > bv) return true;
+      if (av < bv) return false;
+    }
+    return false;
   }
 }

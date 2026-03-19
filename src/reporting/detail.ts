@@ -7,14 +7,7 @@
  */
 
 import type { RunReport, DeltaResult, ControlEvaluation } from '../types';
-
-/** Map score bands to emoji indicators */
-const BAND_EMOJI: Record<string, string> = {
-  green: '\u{1F7E2}',
-  amber: '\u{1F7E1}',
-  red: '\u{1F534}',
-  insufficient_data: '\u{2753}',
-};
+import { BAND_EMOJI } from '../constants';
 
 /**
  * Format a full detail report for display or file storage.

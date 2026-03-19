@@ -250,6 +250,8 @@ export interface ControlEvaluation {
   error_detail: string | null;
   /** Reason for skipping (null unless SKIP) */
   skip_reason: string | null;
+  /** SemVer of library version when this control was first added */
+  introduced_in: string;
 }
 
 // ── Scoring ─────────────────────────────────────────────────────

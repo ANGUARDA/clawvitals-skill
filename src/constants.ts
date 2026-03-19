@@ -128,3 +128,11 @@ export const CRON_EXPRESSIONS: Record<string, string> = {
 
 /** Regex pattern to extract version from `openclaw --version` output */
 export const VERSION_REGEX = /(\d{4}\.\d+\.\d+)/;
+
+/** Map score bands to emoji indicators */
+export const BAND_EMOJI: Record<string, string> = {
+  green: '\u{1F7E2}',
+  amber: '\u{1F7E1}',
+  red: '\u{1F534}',
+  insufficient_data: '\u{2753}',
+};

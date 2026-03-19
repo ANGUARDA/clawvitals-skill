@@ -7,15 +7,7 @@
  */
 
 import type { RunReport, DeltaResult } from '../types';
-import { SUMMARY_MAX_CHARS } from '../constants';
-
-/** Map score bands to emoji indicators */
-const BAND_EMOJI: Record<string, string> = {
-  green: '\u{1F7E2}',    // 🟢
-  amber: '\u{1F7E1}',    // 🟡
-  red: '\u{1F534}',      // 🔴
-  insufficient_data: '\u{2753}', // ❓
-};
+import { SUMMARY_MAX_CHARS, BAND_EMOJI } from '../constants';
 
 /**
  * Format a summary message for delivery to the messaging surface.

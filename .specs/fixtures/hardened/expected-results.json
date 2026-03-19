@@ -12,9 +12,9 @@
   },
   "experimental_controls": {
     "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled — prerequisite not met" },
-    "NC-OC-002": { "result": "PASS", "note": "security.trust_model.multi_user_heuristic NOT present in this profile" },
-    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt still fires" },
-    "NC-OC-006": { "result": "PASS", "note": "multi_user_heuristic not present, so SKIPPED/PASS" }
+    "NC-OC-002": { "result": "SKIPPED", "note": "security.trust_model.multi_user_heuristic NOT present in this profile" },
+    "NC-OC-005": { "result": "SKIPPED", "note": "tools.elevated=enabled — acknowledgement prompt still fires" },
+    "NC-OC-006": { "result": "SKIPPED", "note": "multi_user_heuristic not present, so SKIPPED/PASS" }
   },
   "score_estimate": "100 - 10 (NC-AUTH-001 high) - 5 (NC-OC-008 medium) = 85, AMBER",
   "new_checkIds_discovered": [],

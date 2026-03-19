@@ -12,9 +12,9 @@
   },
   "experimental_controls": {
     "NC-OC-001": { "result": "SKIPPED", "note": "hooks.webhooks=disabled — prerequisite not met" },
-    "NC-OC-002": { "result": "FAIL", "note": "security.trust_model.multi_user_heuristic present" },
-    "NC-OC-005": { "result": "INFO", "note": "tools.elevated=enabled — acknowledgement prompt" },
-    "NC-OC-006": { "result": "FAIL", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" },
+    "NC-OC-002": { "result": "SKIPPED", "note": "security.trust_model.multi_user_heuristic present" },
+    "NC-OC-005": { "result": "SKIPPED", "note": "tools.elevated=enabled — acknowledgement prompt" },
+    "NC-OC-006": { "result": "SKIPPED", "note": "fs.workspaceOnly=false in multi_user_heuristic detail" },
     "NC-OC-007_new": { "result": "FAIL", "note": "gateway.loopback_no_auth — new checkId not yet in control library" },
     "browser_new": { "result": "FAIL", "note": "browser.control_no_auth — new checkId not yet in control library" }
   },

@@ -8,32 +8,26 @@
 import { CliRunner, CliDisallowedBinaryError, CliTimeoutError, CliExecError } from '../../src/cli-runner';
 
 describe('CliRunner', () => {
-  const runner = new CliRunner();
-
-  describe('binary allowlist', () => {
-    it('should reject disallowed binaries with CliDisallowedBinaryError', async () => {
-      await expect(runner.run('curl', ['https://example.com']))
-        .rejects.toThrow(CliDisallowedBinaryError);
+  describe('binary allowlist (constructor validation)', () => {
+    it('should reject disallowed binaries at construction time', () => {
+      expect(() => new CliRunner('curl')).toThrow(CliDisallowedBinaryError);
     });
 
-    it('should reject bash as a binary', async () => {
-      await expect(runner.run('bash', ['-c', 'echo hello']))
-        .rejects.toThrow(CliDisallowedBinaryError);
+    it('should reject bash as a binary', () => {
+      expect(() => new CliRunner('bash')).toThrow(CliDisallowedBinaryError);
     });
 
-    it('should reject sh as a binary', async () => {
-      await expect(runner.run('sh', ['-c', 'echo hello']))
-        .rejects.toThrow(CliDisallowedBinaryError);
+    it('should reject sh as a binary', () => {
+      expect(() => new CliRunner('sh')).toThrow(CliDisallowedBinaryError);
     });
 
-    it('should reject python as a binary', async () => {
-      await expect(runner.run('python', ['-c', 'print("hello")']))
-        .rejects.toThrow(CliDisallowedBinaryError);
+    it('should reject python as a binary', () => {
+      expect(() => new CliRunner('python')).toThrow(CliDisallowedBinaryError);
     });
 
-    it('should include allowed binaries in the error message', async () => {
+    it('should include allowed binaries in the error message', () => {
       try {
-        await runner.run('wget', []);
+        new CliRunner('wget');
         fail('Should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(CliDisallowedBinaryError);
@@ -43,8 +37,8 @@ describe('CliRunner', () => {
     });
 
     it('should allow node as a binary', async () => {
-      // node -e will run and exit 0
-      const result = await runner.run('node', ['-e', 'process.stdout.write("hello")']);
+      const runner = new CliRunner('node');
+      const result = await runner.run(['-e', 'process.stdout.write("hello")']);
       expect(result.stdout).toBe('hello');
       expect(result.exitCode).toBe(0);
     });
@@ -52,23 +46,25 @@ describe('CliRunner', () => {
 
   describe('timeout behavior', () => {
     it('should throw CliTimeoutError when command exceeds timeout', async () => {
-      // Use a very short timeout with a sleep command via node
+      const runner = new CliRunner('node');
       await expect(
-        runner.run('node', ['-e', 'setTimeout(() => {}, 10000)'], { timeoutMs: 200 })
+        runner.run(['-e', 'setTimeout(() => {}, 10000)'], { timeoutMs: 200 })
       ).rejects.toThrow(CliTimeoutError);
     }, 10000);
   });
 
   describe('non-zero exit handling', () => {
     it('should throw CliExecError on non-zero exit code', async () => {
+      const runner = new CliRunner('node');
       await expect(
-        runner.run('node', ['-e', 'process.exit(1)'])
+        runner.run(['-e', 'process.exit(1)'])
       ).rejects.toThrow(CliExecError);
     });
 
     it('should include stderr content in CliExecError', async () => {
+      const runner = new CliRunner('node');
       try {
-        await runner.run('node', ['-e', 'process.stderr.write("error msg"); process.exit(1)']);
+        await runner.run(['-e', 'process.stderr.write("error msg"); process.exit(1)']);
         fail('Should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(CliExecError);
@@ -79,14 +75,15 @@ describe('CliRunner', () => {
 
   describe('successful execution', () => {
     it('should return stdout and exitCode 0 for successful commands', async () => {
-      const result = await runner.run('node', ['-e', 'console.log("test output")']);
+      const runner = new CliRunner('node');
+      const result = await runner.run(['-e', 'console.log("test output")']);
       expect(result.stdout.trim()).toBe('test output');
       expect(result.exitCode).toBe(0);
     });
 
     it('should pass arguments as array without shell interpolation', async () => {
-      // This tests that args with spaces/special chars are passed correctly
-      const result = await runner.run('node', ['-e', 'console.log(process.argv[1])', '--', 'hello world; rm -rf /']);
+      const runner = new CliRunner('node');
+      const result = await runner.run(['-e', 'console.log(process.argv[1])', '--', 'hello world; rm -rf /']);
       expect(result.stdout.trim()).toBe('hello world; rm -rf /');
     });
   });

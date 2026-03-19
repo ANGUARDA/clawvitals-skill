@@ -44,7 +44,7 @@ export async function collectUpdateStatus(
   cli: CliRunner
 ): Promise<SourceResult<UpdateStatusOutput>> {
   try {
-    const result = await cli.run('openclaw', ['update', 'status', '--json']);
+    const result = await cli.run(['update', 'status', '--json']);
     const parsed = JSON.parse(result.stdout) as unknown;
     const validated = UpdateStatusSchema.parse(parsed) as UpdateStatusOutput;
     return {

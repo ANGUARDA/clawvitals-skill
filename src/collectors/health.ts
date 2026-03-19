@@ -42,7 +42,7 @@ export async function collectHealth(
   cli: CliRunner
 ): Promise<SourceResult<HealthOutput>> {
   try {
-    const result = await cli.run('openclaw', ['health', '--json']);
+    const result = await cli.run(['health', '--json']);
     const parsed = JSON.parse(result.stdout) as unknown;
     const validated = HealthSchema.parse(parsed) as unknown as HealthOutput;
     return {

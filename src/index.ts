@@ -28,6 +28,9 @@ import type { Severity } from './types';
 /**
  * Build the full dependency tree for a scan.
  * Uses a consistent workspace directory for all operations.
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Object containing orchestrator, config, storage, scheduler, and platform instances
  */
 function buildDependencies(workspaceDir: string): {
   orchestrator: ScanOrchestrator;
@@ -36,7 +39,7 @@ function buildDependencies(workspaceDir: string): {
   scheduler: SchedulerManager;
   platform: PlatformClient;
 } {
-  const cli = new CliRunner();
+  const cli = new CliRunner('openclaw');
   const collector = new CollectorOrchestrator(cli);
   const config = new ConfigManager(workspaceDir);
   const exclusions = config.getExclusions();
@@ -61,6 +64,9 @@ function buildDependencies(workspaceDir: string): {
 /**
  * Handle a manual scan request.
  * Intent patterns: "run clawvitals", "clawvitals scan", "check clawvitals"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Formatted summary message including score, band, delta, and optional first-run prompts
  */
 export async function handleScan(workspaceDir: string): Promise<string> {
   const { orchestrator, config } = buildDependencies(workspaceDir);
@@ -102,6 +108,9 @@ export async function handleScan(workspaceDir: string): Promise<string> {
 /**
  * Handle a detail report request.
  * Intent patterns: "show clawvitals details", "clawvitals full report"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Full detail report string, or a prompt to run a scan first if no data exists
  */
 export function handleDetail(workspaceDir: string): string {
   const { config, storage } = buildDependencies(workspaceDir);
@@ -111,8 +120,7 @@ export function handleDetail(workspaceDir: string): string {
     return 'No scan found \u{2014} run "run clawvitals" first.';
   }
 
-  const dd = new DeltaDetector();
-  const delta = dd.detect(lastRun, null);
+  const delta = lastRun.dock_analysis.delta;
 
   config.updateUsage({
     detail_requests: config.getUsage().detail_requests + 1,
@@ -124,6 +132,9 @@ export function handleDetail(workspaceDir: string): string {
 /**
  * Handle a history request.
  * Intent pattern: "clawvitals history"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Formatted table of recent scan runs, or a prompt to run a scan first
  */
 export function handleHistory(workspaceDir: string): string {
   const { storage } = buildDependencies(workspaceDir);
@@ -150,6 +161,10 @@ export function handleHistory(workspaceDir: string): string {
 /**
  * Handle a schedule configuration request.
  * Intent patterns: "clawvitals schedule daily/weekly/monthly/off"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @param message - The user's message containing the desired schedule cadence
+ * @returns Confirmation message indicating the new schedule state
  */
 export async function handleSchedule(
   workspaceDir: string,
@@ -175,6 +190,9 @@ export async function handleSchedule(
 /**
  * Handle a scheduled scan (invoked by cron).
  * Only delivers an alert if there are new critical/high findings.
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Alert message string if new critical/high findings exist, or null if no alert is needed
  */
 export async function handleScheduledScan(workspaceDir: string): Promise<string | null> {
   const { orchestrator } = buildDependencies(workspaceDir);
@@ -210,6 +228,10 @@ export async function handleScheduledScan(workspaceDir: string): Promise<string 
 /**
  * Handle a telemetry toggle request.
  * Intent patterns: "clawvitals telemetry on/off"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @param message - The user's message containing "on" or "off"
+ * @returns Confirmation message indicating the new telemetry state
  */
 export function handleTelemetry(workspaceDir: string, message: string): string {
   const { config } = buildDependencies(workspaceDir);
@@ -228,6 +250,10 @@ export function handleTelemetry(workspaceDir: string, message: string): string {
 /**
  * Handle an org token link request.
  * Intent pattern: "clawvitals link {token}"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @param message - The user's message containing the cvt_-prefixed org token
+ * @returns Confirmation or error message indicating the link result
  */
 export async function handleLink(workspaceDir: string, message: string): Promise<string> {
   const { config, platform } = buildDependencies(workspaceDir);
@@ -271,6 +297,10 @@ export async function handleLink(workspaceDir: string, message: string): Promise
 /**
  * Handle a config update request.
  * Intent pattern: "clawvitals config {key} {value}"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @param message - The user's message containing the config key and value
+ * @returns Confirmation message, current config dump, or validation error
  */
 export function handleConfig(workspaceDir: string, message: string): string {
   const { config } = buildDependencies(workspaceDir);
@@ -311,6 +341,9 @@ export function handleConfig(workspaceDir: string, message: string): string {
 /**
  * Handle a status request.
  * Intent pattern: "clawvitals status"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @returns Formatted status summary including host, version, score, and feature states
  */
 export function handleStatus(workspaceDir: string): string {
   const { config } = buildDependencies(workspaceDir);
@@ -334,6 +367,10 @@ export function handleStatus(workspaceDir: string): string {
 /**
  * Handle an exclusion management request.
  * Intent patterns: "clawvitals exclude NC-XXX-NNN ...", "clawvitals exclusions"
+ *
+ * @param workspaceDir - Absolute path to the OpenClaw workspace directory
+ * @param message - The user's message containing the exclusion command or "exclusions" to list
+ * @returns Exclusion list, confirmation of new exclusion, or usage instructions
  */
 export function handleExclusions(workspaceDir: string, message: string): string {
   const { config } = buildDependencies(workspaceDir);
@@ -371,7 +408,12 @@ export function handleExclusions(workspaceDir: string, message: string): string 
   return `\u{2705} Exclusion added for ${excludeMatch[1]}.`;
 }
 
-/** Rank severity for sorting (lower = more severe) */
+/**
+ * Rank severity for sorting (lower = more severe).
+ *
+ * @param severity - The severity level to rank
+ * @returns Numeric rank where 0 is most severe (critical) and 4 is least (info)
+ */
 function severityRank(severity: Severity): number {
   const ranks: Record<Severity, number> = {
     critical: 0,

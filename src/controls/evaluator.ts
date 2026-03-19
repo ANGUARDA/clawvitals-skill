@@ -129,24 +129,15 @@ export class ControlEvaluator {
    * Evaluate experimental controls. Some have real logic, others return SKIP stubs.
    */
   private evaluateExperimental(
-    control: Control,
-    collected: CollectorResult,
+    _control: Control,
+    _collected: CollectorResult,
     base: ControlEvaluation
   ): ControlEvaluation {
-    switch (control.id) {
-      case 'NC-OC-002':
-        return this.evalNCOC002(collected, base);
-      case 'NC-OC-005':
-        return this.evalNCOC005(collected, base);
-      case 'NC-OC-006':
-        return this.evalNCOC006(collected, base);
-      default:
-        return {
-          ...base,
-          result: 'SKIP',
-          skip_reason: 'Experimental control — not yet validated for scoring',
-        };
-    }
+    return {
+      ...base,
+      result: 'SKIP',
+      skip_reason: 'Experimental control — not yet validated for scoring',
+    };
   }
 
   // ── Stable control implementations ──────────────────────────────
@@ -394,128 +385,6 @@ export class ControlEvaluator {
     };
   }
 
-  // ── Experimental control implementations ────────────────────────
-
-  /** NC-OC-002: Sandbox mode appropriate for deployment context */
-  private evalNCOC002(
-    collected: CollectorResult,
-    base: ControlEvaluation
-  ): ControlEvaluation {
-    if (!collected.security_audit.ok || !collected.security_audit.data) {
-      return {
-        ...base,
-        result: 'ERROR',
-        error_detail: `Security audit source unavailable: ${collected.security_audit.error ?? 'unknown error'}`,
-      };
-    }
-
-    // Prerequisite: multi_user_heuristic must be present
-    const multiUser = this.hasFinding(
-      collected.security_audit.data.findings,
-      'security.trust_model.multi_user_heuristic'
-    );
-
-    if (!multiUser) {
-      return {
-        ...base,
-        result: 'PASS',
-        evidence: 'Single-user deployment — sandbox check not applicable',
-        remediation: null,
-      };
-    }
-
-    // If multi-user heuristic is present, that itself is the concern
-    return {
-      ...base,
-      result: 'FAIL',
-      evidence: 'Multi-user heuristic detected — sandbox mode may be inappropriate',
-      remediation: base.remediation,
-    };
-  }
-
-  /** NC-OC-005: Elevated tools usage acknowledged */
-  private evalNCOC005(
-    collected: CollectorResult,
-    base: ControlEvaluation
-  ): ControlEvaluation {
-    if (!collected.attack_surface) {
-      return {
-        ...base,
-        result: 'ERROR',
-        error_detail: 'Attack surface data not available',
-      };
-    }
-
-    if (!collected.attack_surface.parse_ok) {
-      return {
-        ...base,
-        result: 'ERROR',
-        error_detail: 'Attack surface detail parse failed',
-      };
-    }
-
-    if (collected.attack_surface.tools_elevated === true) {
-      return {
-        ...base,
-        result: 'FAIL',
-        evidence: 'Elevated tools are enabled — acknowledgement recommended',
-        remediation: base.remediation,
-      };
-    }
-
-    return {
-      ...base,
-      result: 'PASS',
-      evidence: 'Elevated tools are not enabled',
-      remediation: null,
-    };
-  }
-
-  /** NC-OC-006: Workspace file access scoped */
-  private evalNCOC006(
-    collected: CollectorResult,
-    base: ControlEvaluation
-  ): ControlEvaluation {
-    if (!collected.security_audit.ok || !collected.security_audit.data) {
-      return {
-        ...base,
-        result: 'ERROR',
-        error_detail: `Security audit source unavailable: ${collected.security_audit.error ?? 'unknown error'}`,
-      };
-    }
-
-    // Prerequisite: multi_user_heuristic must be present
-    const multiUserFinding = collected.security_audit.data.findings.find(
-      f => f.checkId === 'security.trust_model.multi_user_heuristic'
-    );
-
-    if (!multiUserFinding) {
-      return {
-        ...base,
-        result: 'PASS',
-        evidence: 'Single-user deployment — workspace scope check not applicable',
-        remediation: null,
-      };
-    }
-
-    // Check for fs.workspaceOnly=false in the detail text
-    if (multiUserFinding.detail.includes('fs.workspaceOnly=false')) {
-      return {
-        ...base,
-        result: 'FAIL',
-        evidence: 'Filesystem access not scoped to workspace in multi-user context',
-        remediation: base.remediation,
-      };
-    }
-
-    return {
-      ...base,
-      result: 'PASS',
-      evidence: 'Filesystem access is scoped to workspace',
-      remediation: null,
-    };
-  }
-
   // ── Helper methods ──────────────────────────────────────────────
 
   /** Build a base evaluation object with defaults for a control */
@@ -535,6 +404,7 @@ export class ControlEvaluator {
       exclusion_expires: null,
       error_detail: null,
       skip_reason: null,
+      introduced_in: control.introduced_in,
     };
   }
 
