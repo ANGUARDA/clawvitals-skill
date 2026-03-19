@@ -1,0 +1,334 @@
+{
+  "version": "0.1.0",
+  "generated": "2026-03-19T00:00:00Z",
+  "controls": [
+    {
+      "id": "NC-OC-001",
+      "name": "Webhook signing secret configured",
+      "domain": "OC",
+      "severity": "critical",
+      "mode": 1,
+      "status": "deferred",
+      "introduced_in": "0.1.0",
+      "description": "Verifies that a webhook signing secret is configured when webhooks are enabled.",
+      "why_it_matters": "Without a signing secret, any actor with knowledge of your webhook URL can send arbitrary commands to your OpenClaw installation.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "prerequisite": "attack_surface.hooks_webhooks == true",
+        "prerequisite_skip_reason": "Webhooks not enabled — check not applicable",
+        "condition": "findings does NOT contain checkId matching signing-secret-related pattern"
+      },
+      "evidence_template": "Signing secret warning present: {present}",
+      "remediation": "Set the webhook signing secret environment variable before starting the gateway. See: https://clawvitals.io/docs/NC-OC-001",
+      "references": ["https://clawvitals.io/docs/NC-OC-001"],
+      "false_positive_notes": "None expected on enabled-webhook installs — this is a binary configuration check."
+    },
+    {
+      "id": "NC-OC-002",
+      "name": "Sandbox mode appropriate for deployment context",
+      "domain": "OC",
+      "severity": "high",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks that sandbox mode is appropriately configured when multi-user heuristics are detected.",
+      "why_it_matters": "Running without sandbox in a multi-user context allows any user to execute arbitrary code on the host system through prompt injection.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "prerequisite": "security.trust_model.multi_user_heuristic checkId present in findings",
+        "prerequisite_skip_reason": "Single-user deployment — sandbox check not applicable",
+        "condition": "security.trust_model.multi_user_heuristic checkId present indicates sandbox concern"
+      },
+      "evidence_template": "Multi-user heuristic detected: {present}. Sandbox mode concern flagged.",
+      "remediation": "If users may be mutually untrusted, split trust boundaries or set agents.defaults.sandbox.mode=\"all\". See: https://clawvitals.io/docs/NC-OC-002",
+      "references": ["https://clawvitals.io/docs/NC-OC-002"],
+      "false_positive_notes": "Single-user personal-assistant deployments will not trigger this — only multi-user heuristic scenarios."
+    },
+    {
+      "id": "NC-OC-003",
+      "name": "No ineffective deny command entries",
+      "domain": "OC",
+      "severity": "high",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks that gateway.nodes.denyCommands entries are all valid, recognized command names.",
+      "why_it_matters": "Ineffective deny entries give a false sense of security — commands you think are blocked may still be executable.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "condition": "findings does NOT contain checkId 'gateway.nodes.deny_commands_ineffective'"
+      },
+      "evidence_template": "Ineffective deny command entries: {status}",
+      "remediation": "Use exact command names in gateway.nodes.denyCommands. See: https://clawvitals.io/docs/NC-OC-003",
+      "references": ["https://clawvitals.io/docs/NC-OC-003"],
+      "false_positive_notes": "No known false positives — OpenClaw validates command names against its own registry."
+    },
+    {
+      "id": "NC-OC-004",
+      "name": "No open (unauthenticated) groups",
+      "domain": "OC",
+      "severity": "critical",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks that no messaging groups are configured with open (unauthenticated) access alongside elevated or runtime tools.",
+      "why_it_matters": "Open groups with elevated tools allow any member to trigger high-impact commands via prompt injection.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "condition": "findings does NOT contain checkId 'security.exposure.open_groups_with_elevated' or 'security.exposure.open_groups_with_runtime_or_fs'"
+      },
+      "evidence_template": "Open group exposure: {status}",
+      "remediation": "Set groupPolicy=\"allowlist\" and tighten elevated tool allowlists. See: https://clawvitals.io/docs/NC-OC-004",
+      "references": ["https://clawvitals.io/docs/NC-OC-004"],
+      "false_positive_notes": "May fire on intentionally open demo/test groups — use exclusions for known-safe configurations."
+    },
+    {
+      "id": "NC-OC-005",
+      "name": "Elevated tools usage acknowledged",
+      "domain": "OC",
+      "severity": "info",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks whether elevated tools are enabled and prompts user acknowledgement.",
+      "why_it_matters": "Elevated tools grant broad system access. While expected for personal-assistant deployments, operators should consciously acknowledge this configuration.",
+      "check": {
+        "source": "attack_surface_detail",
+        "source_type": "derived",
+        "condition": "attack_surface.tools_elevated == true"
+      },
+      "evidence_template": "Elevated tools: {status}",
+      "remediation": "If intentional, run 'clawvitals exclude NC-OC-005 reason \"personal assistant setup\"' to acknowledge. See: https://clawvitals.io/docs/NC-OC-005",
+      "references": ["https://clawvitals.io/docs/NC-OC-005"],
+      "false_positive_notes": "Expected on personal-assistant deployments. The acknowledgement prompt prevents this from being a recurring noise finding."
+    },
+    {
+      "id": "NC-OC-006",
+      "name": "Workspace file access scoped",
+      "domain": "OC",
+      "severity": "high",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks that filesystem access is scoped to workspace when multi-user heuristics are detected.",
+      "why_it_matters": "Unrestricted filesystem access in a multi-user context allows any user to read/write arbitrary files on the host.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "derived",
+        "prerequisite": "security.trust_model.multi_user_heuristic checkId present in findings",
+        "prerequisite_skip_reason": "Single-user deployment — workspace scope check not applicable",
+        "condition": "fs.workspaceOnly=false in multi_user_heuristic detail text"
+      },
+      "evidence_template": "Workspace-only file access: {status}",
+      "remediation": "Set tools.fs.workspaceOnly=true for multi-user deployments. See: https://clawvitals.io/docs/NC-OC-006",
+      "references": ["https://clawvitals.io/docs/NC-OC-006"],
+      "false_positive_notes": "Only fires when multi-user heuristic is active. Single-user deployments are unaffected."
+    },
+    {
+      "id": "NC-OC-007",
+      "name": "Dependency integrity verifiable",
+      "domain": "OC",
+      "severity": "medium",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks that the dependency integrity status is verifiable (not a known failure state).",
+      "why_it_matters": "Unverifiable dependency integrity means supply-chain attacks could go undetected.",
+      "check": {
+        "source": "update_status_json",
+        "source_type": "contextual",
+        "condition": "update.deps.status is not a known failure value"
+      },
+      "evidence_template": "Dependency integrity status: {status}",
+      "remediation": "Ensure a valid lockfile exists for your package manager. See: https://clawvitals.io/docs/NC-OC-007",
+      "references": ["https://clawvitals.io/docs/NC-OC-007"],
+      "false_positive_notes": "Standard pnpm installs may show 'unknown' status due to missing lockfiles — this is expected and does not indicate a problem."
+    },
+    {
+      "id": "NC-OC-008",
+      "name": "All configured channels healthy",
+      "domain": "OC",
+      "severity": "medium",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks that all configured messaging channels have successful probe results.",
+      "why_it_matters": "Unhealthy channels mean security alerts and scan results may not be delivered, leaving operators blind to issues.",
+      "check": {
+        "source": "health_json",
+        "source_type": "contextual",
+        "condition": "No channels[*].probe.ok == false"
+      },
+      "evidence_template": "Channel health: {status}",
+      "remediation": "Check channel configuration and connectivity. Run 'openclaw health' for details. See: https://clawvitals.io/docs/NC-OC-008",
+      "references": ["https://clawvitals.io/docs/NC-OC-008"],
+      "false_positive_notes": "Channels configured but intentionally unused may show as unhealthy. Use exclusions if this is expected."
+    },
+    {
+      "id": "NC-OC-009",
+      "name": "OpenClaw update available",
+      "domain": "OC",
+      "severity": "info",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Informational notice when a newer OpenClaw version is available in the registry.",
+      "why_it_matters": "Staying current ensures you have the latest security fixes and features.",
+      "check": {
+        "source": "update_status_json",
+        "source_type": "contextual",
+        "condition": "availability.hasRegistryUpdate == true"
+      },
+      "evidence_template": "Update available: {status}",
+      "remediation": "Run 'openclaw update' to install the latest version. See: https://clawvitals.io/docs/NC-OC-009",
+      "references": ["https://clawvitals.io/docs/NC-OC-009"],
+      "false_positive_notes": "None — this is a factual check against the registry."
+    },
+    {
+      "id": "NC-AUTH-001",
+      "name": "Reverse proxy trust correctly configured",
+      "domain": "AUTH",
+      "severity": "high",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks that trusted proxies are configured when the gateway binds to loopback.",
+      "why_it_matters": "Without trusted proxy configuration, client IP headers can be spoofed, bypassing local-client security checks.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "condition": "findings does NOT contain checkId 'gateway.trusted_proxies_missing'"
+      },
+      "evidence_template": "Trusted proxies configured: {status}",
+      "remediation": "Set gateway.trustedProxies to your proxy IPs or keep the Control UI local-only. See: https://clawvitals.io/docs/NC-AUTH-001",
+      "references": ["https://clawvitals.io/docs/NC-AUTH-001"],
+      "false_positive_notes": "Expected on loopback-only installs that don't use a reverse proxy. Consider exclusion if intentional."
+    },
+    {
+      "id": "NC-AUTH-002",
+      "name": "No API tokens in workspace files",
+      "domain": "AUTH",
+      "severity": "high",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Scans workspace files for exposed API tokens and credentials.",
+      "why_it_matters": "API tokens in workspace files can be accidentally committed to version control or accessed by unauthorized users.",
+      "check": {
+        "source": "workspace_scan",
+        "source_type": "derived",
+        "condition": "No token-like patterns found in workspace files"
+      },
+      "evidence_template": "Workspace token scan: {status}",
+      "remediation": "Move API tokens to environment variables or a secrets manager. See: https://clawvitals.io/docs/NC-AUTH-002",
+      "references": ["https://clawvitals.io/docs/NC-AUTH-002"],
+      "false_positive_notes": "May match non-token strings that look like tokens. Higher false-positive risk than authoritative checks."
+    },
+    {
+      "id": "NC-AUTH-003",
+      "name": "No tokens in OpenClaw log files",
+      "domain": "AUTH",
+      "severity": "high",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Scans OpenClaw log files for accidentally logged credentials.",
+      "why_it_matters": "Tokens in log files persist on disk and may be exposed through log aggregation or shared access.",
+      "check": {
+        "source": "log_scan",
+        "source_type": "derived",
+        "condition": "No token-like patterns found in log files"
+      },
+      "evidence_template": "Log token scan: {status}",
+      "remediation": "Configure log redaction for sensitive fields. See: https://clawvitals.io/docs/NC-AUTH-003",
+      "references": ["https://clawvitals.io/docs/NC-AUTH-003"],
+      "false_positive_notes": "May match non-token strings in logs. Higher false-positive risk than authoritative checks."
+    },
+    {
+      "id": "NC-VERS-001",
+      "name": "OpenClaw is behind latest release",
+      "domain": "VERS",
+      "severity": "medium",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks whether the installed OpenClaw version is behind the latest available release.",
+      "why_it_matters": "Running older versions may miss important security patches and bug fixes.",
+      "check": {
+        "source": "update_status_json",
+        "source_type": "contextual",
+        "condition": "availability.hasRegistryUpdate == true"
+      },
+      "evidence_template": "Version currency: {status}",
+      "remediation": "Run 'openclaw update' to install the latest version. See: https://clawvitals.io/docs/NC-VERS-001",
+      "references": ["https://clawvitals.io/docs/NC-VERS-001"],
+      "false_positive_notes": "None — this is a factual check against the registry."
+    },
+    {
+      "id": "NC-VERS-002",
+      "name": "OpenClaw not more than 2 minor versions behind",
+      "domain": "VERS",
+      "severity": "medium",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "0.1.0",
+      "description": "Checks that the installed version is within 2 minor versions of the latest release.",
+      "why_it_matters": "Being significantly behind increases the risk of missing critical security fixes and API incompatibilities.",
+      "check": {
+        "source": "update_status_json",
+        "source_type": "contextual",
+        "prerequisite": "version_cmd.ok == true && version_cmd.version != null",
+        "prerequisite_skip_reason": "Current version not determinable",
+        "condition": "Version distance (totalMonthsBehind) <= 2"
+      },
+      "evidence_template": "Version distance: {status}",
+      "remediation": "Run 'openclaw update' to install the latest version. See: https://clawvitals.io/docs/NC-VERS-002",
+      "references": ["https://clawvitals.io/docs/NC-VERS-002"],
+      "false_positive_notes": "None — based on factual version comparison."
+    },
+    {
+      "id": "NC-VERS-004",
+      "name": "Node.js runtime within LTS support window",
+      "domain": "VERS",
+      "severity": "medium",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks that the Node.js runtime is within the LTS support window.",
+      "why_it_matters": "Running on unsupported Node.js versions means no security patches for the runtime itself.",
+      "check": {
+        "source": "node_version",
+        "source_type": "contextual",
+        "condition": "Node.js version is within active LTS support window"
+      },
+      "evidence_template": "Node.js LTS status: {status}",
+      "remediation": "Upgrade to a supported Node.js LTS version. See: https://clawvitals.io/docs/NC-VERS-004",
+      "references": ["https://clawvitals.io/docs/NC-VERS-004"],
+      "false_positive_notes": "None expected — based on official Node.js release schedule."
+    },
+    {
+      "id": "NC-VERS-005",
+      "name": "No deprecated API usage warnings",
+      "domain": "VERS",
+      "severity": "low",
+      "mode": 1,
+      "status": "experimental",
+      "introduced_in": "0.1.0",
+      "description": "Checks for deprecation warnings in OpenClaw security audit output.",
+      "why_it_matters": "Deprecated APIs may be removed in future versions, potentially breaking functionality or exposing security gaps.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "condition": "No deprecation-related checkIds in findings"
+      },
+      "evidence_template": "Deprecation warnings: {status}",
+      "remediation": "Review and update usage of deprecated APIs. See: https://clawvitals.io/docs/NC-VERS-005",
+      "references": ["https://clawvitals.io/docs/NC-VERS-005"],
+      "false_positive_notes": "Uncertain data source — may not produce results on current OpenClaw versions."
+    }
+  ]
+}
