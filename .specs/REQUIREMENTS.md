@@ -56,9 +56,9 @@ Dock is a security health check product. It is not a governance validation tool,
 
 The OpenClaw security tooling space is not empty.
 
-ClawVitals is designed for a different job: **lightweight recurring assessment**. The first scan finds real issues and tells you exactly how to fix them. Repeated scans become more valuable over time because of delta detection, posture tracking, and regression-aware alerting. Dock is intended to be useful on first scan and more valuable on every scan after that.
+ClawVitals is designed for: **lightweight recurring assessment**. The first scan finds real issues and tells you exactly how to fix them. Repeated scans become more valuable over time because of delta detection, posture tracking, and regression-aware alerting. Dock is intended to be useful on first scan and more valuable on every scan after that.
 
-ClawVitals is not trying to win on check count, out-enterprise SecureClaw, or replace one-shot auditing tools. Its lane is: easier to understand, easier to run repeatedly, more habit-forming, more operationally useful over time.
+ClawVitals is not trying to win on check count, enterprise readiness, or replace one-shot auditing tools. Its lane is: easier to understand, easier to run repeatedly, more habit-forming, more operationally useful over time.
 
 ClawVitals v0.1 control library (6 stable checks) covers the highest-impact misconfigurations that OpenClaw's own security audit surfaces directly. The controls are the minimum viable evidence needed to produce a meaningful, comparable score across scans. Users who want comprehensive one-shot auditing with automated hardening should use SecureClaw. Users who want to check whether their setup is secure, know exactly what to fix, and catch regressions over time — should use Dock. The two tools can coexist on the same installation.
 
