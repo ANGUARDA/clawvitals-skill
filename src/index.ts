@@ -21,6 +21,7 @@ import { SchedulerManager } from './scheduling';
 import { ScanOrchestrator } from './orchestrator';
 import { PlatformClient } from './platform';
 import { formatDetail } from './reporting/detail';
+import { formatSummary } from './reporting/summary';
 import { SKILL_VERSION, LIBRARY_VERSION, ALERT_TOP_FINDINGS } from './constants';
 import type { Severity } from './types';
 
@@ -51,7 +52,7 @@ function buildDependencies(workspaceDir: string): {
 
   const orchestrator = new ScanOrchestrator(
     collector, evaluator, scorer, delta, reporter,
-    storage, config, telemetry, scheduler, workspaceDir
+    storage, config, telemetry, scheduler, platform, workspaceDir
   );
 
   return { orchestrator, config, storage, scheduler, platform };
@@ -73,15 +74,10 @@ export async function handleScan(workspaceDir: string): Promise<string> {
 
   const report = await orchestrator.run({ isScheduled: false });
 
-  const { formatSummary } = await import('./reporting/summary');
-  const { DeltaDetector: DD } = await import('./scoring/delta');
-  const dd = new DD();
-  const storage = new StorageManager(workspaceDir);
-  const previousRun = storage.loadLastRun();
-  const deltaResult = dd.detect(report, previousRun);
+  // Use the delta already computed by the orchestrator (before the run was stored),
+  // not a re-computation which would compare the report against itself.
   const staleExclusions = config.hasStaleExclusions();
-
-  output += formatSummary(report, deltaResult, staleExclusions);
+  output += formatSummary(report, report.dock_analysis.delta, staleExclusions);
 
   if (isFirstRun) {
     output += '\n\n---\n';
@@ -107,7 +103,7 @@ export async function handleScan(workspaceDir: string): Promise<string> {
  * Handle a detail report request.
  * Intent patterns: "show clawvitals details", "clawvitals full report"
  */
-export async function handleDetail(workspaceDir: string): Promise<string> {
+export function handleDetail(workspaceDir: string): string {
   const { config, storage } = buildDependencies(workspaceDir);
   const lastRun = storage.loadLastRun();
 
@@ -249,6 +245,17 @@ export async function handleLink(workspaceDir: string, message: string): Promise
 
   if (result.ok) {
     config.setConfig({ org_token: token, pending_org_token: null });
+    // Save agent session if returned by the platform (Phase 3)
+    const agentSession = result.data?.['agent_session'] as import('./types').AgentSession | undefined;
+    if (agentSession !== undefined) {
+      try {
+        config.saveAgentSession(agentSession);
+      } catch {
+        // If session save fails, revert the config write (atomic requirement per spec 6.7)
+        config.setConfig({ org_token: null, pending_org_token: token });
+        return 'Link partially failed \u{2014} could not save agent session. Please retry with "clawvitals link ' + token + '".';
+      }
+    }
     return '\u{2705} ClawVitals linked to your Anguarda account. Your fleet dashboard: https://clawvitals.io/dashboard';
   }
 

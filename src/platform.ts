@@ -25,22 +25,22 @@ export class PlatformClient {
    * Link an installation to an Anguarda account.
    * Phase 1: returns platform_not_available.
    */
-  async link(
+  link(
     _orgToken: string,
     _installId: string,
     _hostName: string
   ): Promise<PlatformResult> {
-    return { ok: false, error: 'platform_not_available' };
+    return Promise.resolve({ ok: false, error: 'platform_not_available' });
   }
 
   /**
    * Register an agent with the platform.
    * Phase 1: returns platform_not_available.
    */
-  async register(
+  register(
     _orgToken: string,
     _installId: string
   ): Promise<PlatformResult> {
-    return { ok: false, error: 'platform_not_available' };
+    return Promise.resolve({ ok: false, error: 'platform_not_available' });
   }
 }

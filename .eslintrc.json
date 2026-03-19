@@ -4,7 +4,7 @@
   "parserOptions": {
     "ecmaVersion": 2022,
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.eslint.json"
   },
   "plugins": ["@typescript-eslint"],
   "extends": [
@@ -23,5 +23,5 @@
     "no-eval": "error",
     "no-implied-eval": "error"
   },
-  "ignorePatterns": ["dist/", "node_modules/", "jest.config.ts", "tests/"]
+  "ignorePatterns": ["dist/", "node_modules/", "jest.config.js"]
 }

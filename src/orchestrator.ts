@@ -18,7 +18,8 @@ import type { StorageManager } from './reporting/storage';
 import type { ConfigManager } from './config';
 import type { TelemetryClient } from './telemetry';
 import type { SchedulerManager } from './scheduling';
-import type { RunReport, LockFile, ScoreBand } from './types';
+import type { PlatformClient } from './platform';
+import type { RunReport, LockFile } from './types';
 import { loadControlLibrary } from './controls/library';
 import {
   SKILL_VERSION,
@@ -49,6 +50,7 @@ export class ScanOrchestrator {
     private readonly config: ConfigManager,
     private readonly telemetry: TelemetryClient,
     private readonly scheduler: SchedulerManager,
+    private readonly platform: PlatformClient,
     private readonly workspaceDir: string
   ) {}
 
@@ -83,6 +85,9 @@ export class ScanOrchestrator {
 
     try {
       const cvConfig = this.config.getConfig();
+
+      // Retry pending org token link if set (spec 6.7)
+      await this.retryPendingOrgToken(cvConfig);
 
       // Collect data from all sources
       const collected = await this.collector.collect();
@@ -157,9 +162,12 @@ export class ScanOrchestrator {
         manual_runs: options.isScheduled ? usage.manual_runs : usage.manual_runs + 1,
         scheduled_runs: options.isScheduled ? usage.scheduled_runs + 1 : usage.scheduled_runs,
         last_run_at: report.meta.scan_ts,
-        last_score_band: scoreResult.band as ScoreBand,
+        last_score_band: scoreResult.band,
         last_stable_fail_count: scoreResult.stable_fail,
       });
+
+      // Purge old runs based on retention policy
+      this.storage.purgeOldRuns(cvConfig.retention_days);
 
       // Fire and forget telemetry
       void this.telemetry.ping(report, this.config.getUsage(), cvConfig);
@@ -168,6 +176,34 @@ export class ScanOrchestrator {
     } finally {
       // Always release lock
       this.releaseLock(lockPath);
+    }
+  }
+
+  /**
+   * Retry linking a pending org token if one is saved from a previous failed attempt.
+   * On success, clears the pending token and sets the active org_token.
+   * On failure, logs and continues — the skill still works offline.
+   */
+  private async retryPendingOrgToken(
+    cvConfig: { pending_org_token: string | null; host_name: string }
+  ): Promise<void> {
+    if (!cvConfig.pending_org_token) return;
+    try {
+      const usage = this.config.getUsage();
+      const result = await this.platform.link(
+        cvConfig.pending_org_token,
+        usage.install_id,
+        cvConfig.host_name
+      );
+      if (result.ok) {
+        this.config.setConfig({
+          org_token: cvConfig.pending_org_token,
+          pending_org_token: null,
+        });
+      }
+      // On failure: leave pending_org_token for next retry
+    } catch {
+      // Non-fatal — skill continues without platform link
     }
   }
 

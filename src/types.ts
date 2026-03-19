@@ -370,7 +370,7 @@ export interface ClawVitalsConfig {
   /** Path to exclusions.json */
   exclusions_path: string;
   /** How to determine the current version */
-  version_source: 'auto' | 'manual' | string;
+  version_source: string;
   /** Whether anonymous telemetry is enabled */
   telemetry_enabled: boolean;
   /** HTTPS endpoint for telemetry pings */
