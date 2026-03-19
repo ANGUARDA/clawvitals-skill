@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.js.map
+.env
+*.dec.yaml
+*.plaintext.yaml
+.DS_Store
+coverage/
