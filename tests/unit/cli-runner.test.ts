@@ -51,15 +51,15 @@ describe('CliRunner', () => {
   });
 
   describe('timeout behavior', () => {
-    it('should throw CliTimeoutError when command exceeds timeout', async () => {
+    it('should throw CliTimeoutError or CliExecError when command exceeds timeout', async () => {
       // This test requires openclaw to be installed; skip gracefully if not
       const runner = new CliRunner('openclaw');
       try {
         await runner.run(['--version'], { timeoutMs: 1 }); // 1ms timeout will always expire
         // If openclaw isn't installed this path won't be reached
       } catch (err) {
-        // Either CliTimeoutError (command ran but timed out) or CliExecError (not installed) 
-        expect(err).toBeInstanceOf(CliTimeoutError || CliExecError);
+        // Accept either: CliTimeoutError (timed out) or CliExecError (not installed / fast fail)
+        expect(err instanceof CliTimeoutError || err instanceof CliExecError).toBe(true);
       }
     });
   });

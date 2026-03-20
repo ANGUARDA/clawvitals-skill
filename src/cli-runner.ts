@@ -4,8 +4,12 @@
  * This is the ONLY place in the codebase that invokes system commands.
  * Every collector MUST use CliRunner — never call exec directly. This module
  * enforces the binary allowlist, argument-as-array safety, and timeout policy.
+ *
+ * Uses runPluginCommandWithTimeout from the OpenClaw plugin SDK — no direct
+ * child_process access required.
  */
 
+import { runPluginCommandWithTimeout } from '@openclaw/plugin-sdk';
 import { ALLOWED_BINARIES, CLI_TIMEOUT_MS } from './constants';
 
 /** Thrown when a CLI command exceeds its timeout */
@@ -98,32 +102,28 @@ export class CliRunner {
     args: string[],
     options: CliRunOptions = {}
   ): Promise<CliRunResult> {
-    const { execFile } = await import('node:child_process');
     const timeoutMs = options.timeoutMs ?? CLI_TIMEOUT_MS;
+    const commandStr = `${this.binary} ${args.join(' ')}`;
 
-    return new Promise<CliRunResult>((resolve, reject) => {
-      const child = execFile(
-        this.binary,
-        args,
-        { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
-        (error, stdout, stderr) => {
-          if (error) {
-            if ('killed' in error && error.killed) {
-              reject(new CliTimeoutError(`${this.binary} ${args.join(' ')}`, timeoutMs));
-              return;
-            }
-            const exitCode = 'code' in error && typeof error.code === 'number' ? error.code : 1;
-            reject(new CliExecError(`${this.binary} ${args.join(' ')}`, exitCode, stderr));
-            return;
-          }
-          resolve({ stdout, stderr, exitCode: 0 });
-        }
-      );
-
-      /* istanbul ignore next — defensive cleanup for edge cases */
-      child.on('error', (err) => {
-        reject(new CliExecError(`${this.binary} ${args.join(' ')}`, 1, err.message));
+    try {
+      const result = await runPluginCommandWithTimeout({
+        argv: [this.binary, ...args],
+        timeoutMs,
       });
-    });
+
+      if (result.code !== 0) {
+        throw new CliExecError(commandStr, result.code, result.stderr);
+      }
+
+      return { stdout: result.stdout, stderr: result.stderr, exitCode: result.code };
+    } catch (err) {
+      if (err instanceof CliExecError) throw err;
+      // Timeout or spawn failure from the SDK
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('timed out')) {
+        throw new CliTimeoutError(commandStr, timeoutMs);
+      }
+      throw new CliExecError(commandStr, 1, msg);
+    }
   }
 }
