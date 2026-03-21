@@ -1,6 +1,6 @@
 {
     "name": "clawvitals",
-    "version": "2.0.0",
+    "version": "1.2.0",
     "description": "Security health check and recurring assessment for OpenClaw installations",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

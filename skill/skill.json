@@ -1,6 +1,6 @@
 {
   "name": "clawvitals",
-  "version": "2.0.0",
+  "version": "1.2.0",
   "always": false,
   "displayName": "ClawVitals",
   "description": "Check your OpenClaw security vitals. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.",
