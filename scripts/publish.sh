@@ -57,7 +57,7 @@ md = md.replace(
 )
 md = md.replace(
     'description: Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.',
-    'description: Security vitals checker for OpenClaw, also known as ClawVitals. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.'
+    'description: Security vitals checker, also known as ClawVitals. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.'
 )
 md = md.replace(
     'homepage: https://clawvitals.io',
@@ -77,7 +77,7 @@ import json
 with open('$TMPDIR/skill.json') as f: s = json.load(f)
 s['name'] = 'securityvitals'
 s['displayName'] = 'SecurityVitals'
-s['description'] = 'Security vitals checker for OpenClaw, also known as ClawVitals. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.'
+s['description'] = 'Security vitals checker, also known as ClawVitals. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.'
 s['tags'] = ['security', 'audit', 'health-check', 'openclaw', 'monitoring', 'vitals', 'security-vitals']
 with open('$TMPDIR/skill.json', 'w') as f: json.dump(s, f, indent=2)
 print('Patched skill.json for securityvitals')
