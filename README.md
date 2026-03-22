@@ -17,20 +17,28 @@ shared/
   controls/ → Control library (shared between skill and plugin)
 ```
 
-## Skill
+## Skills
 
-The skill is available now on ClawHub:
+Two ClawHub slugs, one source. Both are built from `skill/SKILL.md` — content is identical, only the name differs.
 
-```bash
-npx clawhub install clawvitals
-```
+| Slug | Install | Purpose |
+|---|---|---|
+| `clawvitals` | `npx clawhub install clawvitals` | Primary brand |
+| `securityvitals` | `npx clawhub install securityvitals` | Search discoverability ("security vitals") |
 
-Then in your OpenClaw messaging surface:
-```
-run clawvitals
-```
+Both point to clawvitals.io. One may be deprecated in future.
 
 → [skill/README.md](skill/README.md) · [clawvitals.io/docs](https://clawvitals.io/docs)
+
+## Publishing
+
+Use the publish script to keep both skills in sync:
+
+```bash
+./scripts/publish.sh <version> "<changelog message>"
+```
+
+This publishes `clawvitals` and `securityvitals` atomically from the same `skill/` source. Never publish one without the other.
 
 ## Plugin
 
