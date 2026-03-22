@@ -3,14 +3,14 @@ name: clawvitals
 description: Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.
 homepage: https://clawvitals.io
 tags: [security, audit, health-check, openclaw, monitoring, vitals, security-vitals]
-metadata: {"openclaw": {"requires": {"binaries": ["openclaw", "node"]}, "minVersion": "2026.3.0"}}
+metadata: {"openclaw": {"requires": {"bins": ["openclaw", "node"]}, "minVersion": "2026.3.0"}}
 ---
 
 # ClawVitals
 
 Security health check for self-hosted OpenClaw installations. Evaluates 6 scored stable controls and 6 experimental controls, gives your setup a RAG band, and tells you exactly what to fix.
 
-**No data leaves your machine. This skill is stateless and does not store scan history.**
+**This skill is stateless and does not store scan history. The skill itself makes no network calls. Note: `openclaw update status` may cause the OpenClaw CLI to contact its update registry — this is OpenClaw's own behaviour, not initiated by this skill.**
 
 > This skill performs point-in-time checks only. Scan history, recurring monitoring, and the clawvitals.io/dashboard are part of the ClawVitals plugin — see clawvitals.io/plugin.
 
@@ -308,7 +308,7 @@ Running your first scan now...
 - `openclaw update status --json`
 - `node --version`
 
-**Network access:** None. No data leaves your machine.
+**Network access:** This skill makes no network calls and declares no network permissions. Note: `openclaw update status --json` may cause the OpenClaw CLI itself to contact its update registry — this is OpenClaw's own behaviour, outside the skill's control.
 
 **Local storage:** Nothing is stored. This skill is stateless and does not store scan history.
 
