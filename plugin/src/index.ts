@@ -163,7 +163,10 @@ async function runScheduledScan(workspaceDir: string): Promise<string | null> {
   const pluginState = loadState();
   const telemetryClient = new PluginTelemetryClient(pluginConfig, pluginState);
 
-  const stableFails = report.dock_analysis.stable.findings.filter(f => f.result === 'FAIL').length;
+  // M5: Exclude info-severity FAILs from fail count (NC-OC-009 is INFO/not-scored)
+  const stableFails = report.dock_analysis.stable.findings.filter(
+    f => f.result === 'FAIL' && f.severity !== 'info'
+  ).length;
   const stablePasses = report.dock_analysis.stable.findings.filter(f => f.result === 'PASS').length;
   const score = report.dock_analysis.stable.score;
 
@@ -184,6 +187,7 @@ async function runScheduledScan(workspaceDir: string): Promise<string | null> {
 
   // Evaluate alert: compare to previous run snapshot from delta
   const alertConfig = resolveAlertConfig(pluginConfig);
+  // M5: stableFails already excludes info-severity FAILs (NC-OC-009 is INFO/not-scored)
   const currentSnapshot: ScanSnapshot = {
     score:          typeof score === 'number' ? score : 'insufficient_data',
     band:           report.dock_analysis.stable.band,
@@ -194,17 +198,20 @@ async function runScheduledScan(workspaceDir: string): Promise<string | null> {
     scan_ts: report.meta.scan_ts,
   };
 
-  // Build previous snapshot from delta data if available
-  const prevFindings = report.dock_analysis.delta?.resolved_findings ?? [];
-  const hasPreviousRun = report.dock_analysis.delta !== undefined;
-  const previousSnapshot: ScanSnapshot | null = hasPreviousRun
+  // M2: Load previous snapshot directly from StorageManager for accurate fail counts
+  // M5: Exclude info-severity FAILs from fail_count (NC-OC-009 is INFO/not-scored)
+  const previousRun = new StorageManager(workspaceDir).loadLastRun();
+  const previousSnapshot: ScanSnapshot | null = previousRun
     ? {
-        score:          'insufficient_data', // delta doesn't store prev score; alert logic uses fail_count
-        band:           'unknown',
-        fail_count:     stableFails - (report.dock_analysis.delta?.new_findings?.length ?? 0)
-                        + prevFindings.length,
-        critical_count: 0,
-        scan_ts:        '',
+        score:          previousRun.dock_analysis.stable.score,
+        band:           previousRun.dock_analysis.stable.band,
+        fail_count:     previousRun.dock_analysis.stable.findings.filter(
+          f => f.result === 'FAIL' && f.severity !== 'info'
+        ).length,
+        critical_count: previousRun.dock_analysis.stable.findings.filter(
+          f => f.result === 'FAIL' && f.severity === 'critical'
+        ).length,
+        scan_ts:        previousRun.meta.scan_ts,
       }
     : null;
 
@@ -672,6 +679,13 @@ const clawvitalsPlugin = {
           }
 
           if (trial.plan === 'free') {
+            // M1: Validate upgrade_url starts with https://
+            if (typeof trial.upgrade_url !== 'string' || !trial.upgrade_url.startsWith('https://')) {
+              return textResult(
+                "You're on the ClawVitals Free plan. You have 1 instance and 7-day history.\n" +
+                `To upgrade to Pro (fleet view, PDF reports, 90-day history), say 'upgrade ClawVitals'.`
+              );
+            }
             return textResult(
               "You're on the ClawVitals Free plan. You have 1 instance and 7-day history.\n" +
               `To upgrade to Pro (fleet view, PDF reports, 90-day history), say 'upgrade ClawVitals'.\n` +
@@ -692,10 +706,14 @@ const clawvitalsPlugin = {
           const featuresUsing = ['fleet view', 'PDF reports', '90-day history'];
 
           if (daysLeft <= 0) {
+            // M1: Validate upgrade_url starts with https://
+            const upgradeUrlExpired =
+              typeof trial.upgrade_url === 'string' && trial.upgrade_url.startsWith('https://')
+                ? `\nUpgrade URL: ${trial.upgrade_url}`
+                : '';
             return textResult(
               "Your ClawVitals Pro trial has ended. You're now on the Free plan.\n" +
-              `To restore fleet access and full history, say 'upgrade ClawVitals'.\n` +
-              `Upgrade URL: ${trial.upgrade_url}`
+              `To restore fleet access and full history, say 'upgrade ClawVitals'.${upgradeUrlExpired}`
             );
           }
 
@@ -735,6 +753,11 @@ const clawvitalsPlugin = {
             checkout_url: string;
             message: string;
           };
+
+          // M1: Validate checkout_url starts with https://
+          if (typeof data.checkout_url !== 'string' || !data.checkout_url.startsWith('https://')) {
+            return textResult('❌ Upgrade failed: received an invalid checkout URL from the server.');
+          }
 
           return textResult(
             `Here's your upgrade link: ${data.checkout_url}\n` +
@@ -786,9 +809,7 @@ const clawvitalsPlugin = {
           saveState(state);
 
           return textResult(
-            `✅ Webhook configured: ${data.webhook_url}\n\n` +
-            `🔐 Webhook secret (shown once — saved to state.json):\n${data.webhook_secret}\n\n` +
-            `Use the X-ClawVitals-Signature header to verify incoming webhooks.`
+            `✅ Webhook configured. Secret saved securely to state.json — retrieve it from ~/.openclaw/plugins/clawvitals/state.json if needed.`
           );
 
         } catch (err) {
@@ -900,12 +921,16 @@ const clawvitalsPlugin = {
         }
 
         if (params.filename === 'all') {
+          // M7: Provide clear confirmation listing ALL approved files for auditability
           for (const file of inventory.files) {
             approveFile(workspaceDir, file.name, inventory, 'plugin');
           }
+          const fileList = inventory.files.map(f => `  • ${f.name} (sha256: ${f.sha256.slice(0, 12)}…)`).join('\n');
           return textResult(
-            `✅ Approved ${inventory.files.length} file(s) into baseline:\n` +
-            inventory.files.map(f => `  • ${f.name}`).join('\n')
+            `✅ ALL ${inventory.files.length} cognitive file(s) approved into baseline:\n` +
+            fileList + '\n\n' +
+            `⚠️ Note: Approving all files marks them as trusted. ` +
+            `Future changes to any of these files will trigger drift alerts.`
           );
         }
 

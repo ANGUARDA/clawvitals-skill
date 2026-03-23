@@ -135,7 +135,14 @@ export class ConfigManager {
    */
   getExclusions(): Exclusion[] {
     const config = this.getConfig();
-    const exclusionsPath = path.join(this.baseDir, config.exclusions_path || EXCLUSIONS_FILE);
+    // B3: Validate exclusions_path is a bare filename (no slashes, no ..)
+    const rawExclusionsPath = config.exclusions_path || EXCLUSIONS_FILE;
+    const safeFilename = path.basename(rawExclusionsPath);
+    const resolvedFilename =
+      safeFilename && !safeFilename.includes('..') && safeFilename === rawExclusionsPath
+        ? safeFilename
+        : EXCLUSIONS_FILE;
+    const exclusionsPath = path.join(this.baseDir, resolvedFilename);
     try {
       if (fs.existsSync(exclusionsPath)) {
         const content = fs.readFileSync(exclusionsPath, 'utf-8');
@@ -156,7 +163,14 @@ export class ConfigManager {
     const exclusions = this.getExclusions();
     exclusions.push(exclusion);
     const config = this.getConfig();
-    const exclusionsPath = path.join(this.baseDir, config.exclusions_path || EXCLUSIONS_FILE);
+    // B3: Validate exclusions_path is a bare filename (no slashes, no ..)
+    const rawExclusionsPath = config.exclusions_path || EXCLUSIONS_FILE;
+    const safeFilename = path.basename(rawExclusionsPath);
+    const resolvedFilename =
+      safeFilename && !safeFilename.includes('..') && safeFilename === rawExclusionsPath
+        ? safeFilename
+        : EXCLUSIONS_FILE;
+    const exclusionsPath = path.join(this.baseDir, resolvedFilename);
     this.ensureDir();
     this.writeSecureJson(exclusionsPath, exclusions);
   }

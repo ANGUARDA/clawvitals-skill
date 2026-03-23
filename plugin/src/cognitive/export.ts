@@ -18,8 +18,14 @@ export function getLatestReport(workspaceDir: string, format: "markdown" | "path
       return { found: false, message: "No scan history yet. Run clawvitals first." };
     }
 
-    const latest = entries[entries.length - 1];
-    const latestDir = path.join(runsPath, latest);
+    const rawLatest = entries[entries.length - 1];
+    // B2: Validate the entry name to prevent path traversal
+    const safeLatest = path.basename(rawLatest);
+    const latestDir = path.resolve(path.join(runsPath, safeLatest));
+    const resolvedRunsPath = path.resolve(runsPath);
+    if (!latestDir.startsWith(resolvedRunsPath + path.sep) && latestDir !== resolvedRunsPath) {
+      return { found: false, message: "Invalid scan directory name detected." };
+    }
 
     if (format === "path") {
       return { found: true, path: latestDir };

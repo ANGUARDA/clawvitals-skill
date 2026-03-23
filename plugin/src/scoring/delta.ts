@@ -89,10 +89,17 @@ export class DeltaDetector {
   /**
    * Compare two semver strings (a > b).
    * Splits on '.', compares each numeric component left-to-right.
+   * Strips pre-release suffixes (e.g. "1.2.3-rc1" → 1.2.3) before comparing.
    */
   private semverGreaterThan(a: string, b: string): boolean {
-    const aParts = a.split('.').map(Number);
-    const bParts = b.split('.').map(Number);
+    // M4: Strip pre-release suffixes and use parseInt with fallback to 0
+    const parsePart = (part: string): number => {
+      const numeric = parseInt(part, 10);
+      return isNaN(numeric) ? 0 : numeric;
+    };
+    // Strip pre-release suffix from the full version string before splitting
+    const aParts = a.replace(/-.*$/, '').split('.').map(parsePart);
+    const bParts = b.replace(/-.*$/, '').split('.').map(parsePart);
     const len = Math.max(aParts.length, bParts.length);
     for (let i = 0; i < len; i++) {
       const av = aParts[i] ?? 0;

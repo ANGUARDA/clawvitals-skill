@@ -82,7 +82,15 @@ export class StorageManager {
 
       if (typeof pointer.run_dir !== 'string' || !pointer.run_dir) return null;
 
-      const reportPath = path.join(this.getRunsDir(), pointer.run_dir, 'report.json');
+      // B1: Validate run_dir to prevent path traversal
+      const runDir = pointer.run_dir;
+      if (
+        runDir.includes('..') ||
+        runDir.includes('/') ||
+        runDir.includes('\\')
+      ) return null;
+
+      const reportPath = path.join(this.getRunsDir(), runDir, 'report.json');
       if (!fs.existsSync(reportPath)) return null;
 
       const reportContent = fs.readFileSync(reportPath, 'utf-8');
@@ -163,7 +171,13 @@ export class StorageManager {
         try {
           const dirDate = new Date(entry.name);
           if (!isNaN(dirDate.getTime()) && dirDate < cutoff) {
-            fs.rmSync(path.join(runsDir, entry.name), { recursive: true, force: true });
+            // M6: Resolve full path and verify it stays within runsDir before deleting
+            const candidatePath = path.resolve(path.join(runsDir, path.basename(entry.name)));
+            const resolvedRunsDir = path.resolve(runsDir);
+            if (!candidatePath.startsWith(resolvedRunsDir + path.sep) && candidatePath !== resolvedRunsDir) {
+              continue; // Skip paths that escape runsDir
+            }
+            fs.rmSync(candidatePath, { recursive: true, force: true });
           }
         } catch {
           // Skip unparseable directory names
