@@ -49,7 +49,9 @@ import { TelemetryClient } from './telemetry/index.js';
 import { SchedulerManager } from './scheduling/index.js';
 import { ScanOrchestrator } from './orchestrator.js';
 import { formatSummary } from './reporting/summary.js';
-import { CRON_JOB_NAME } from './constants.js';
+import { formatDetail } from './reporting/detail.js';
+import type { DeltaResult } from './types.js';
+import { CRON_JOB_NAME, PLUGIN_VERSION } from './constants.js';
 import { PluginTelemetryClient } from './telemetry.js';
 import { evaluateAlert, resolveAlertConfig } from './alerts.js';
 import type { ScanSnapshot } from './alerts.js';
@@ -200,6 +202,84 @@ async function runScheduledScan(workspaceDir: string): Promise<string | null> {
 
   // Silent — no regression, no new criticals. Return null (don't send a message).
   return null;
+}
+
+// ── Plugin header ─────────────────────────────────────────────────────────
+
+/** One-line header prepended to all plugin-driven scan output. */
+function pluginHeader(): string {
+  return `ClawVitals Plugin v${PLUGIN_VERSION} 🔌`;
+}
+
+// ── Intent matchers ───────────────────────────────────────────────────────
+// Mirror the patterns from the ClawHub skill's skill.json intents so that
+// the plugin intercepts them before the skill (or LLM) gets a chance.
+
+const SCAN_PATTERNS = [
+  'run clawvitals',
+  'clawvitals scan',
+  'check clawvitals',
+  'clawvitals check',
+];
+
+const DETAIL_PATTERNS = [
+  'show clawvitals details',
+  'clawvitals full report',
+  'clawvitals details',
+];
+
+function matchesIntent(prompt: string, patterns: string[]): boolean {
+  const normalised = prompt.trim().toLowerCase();
+  return patterns.some(p => normalised.startsWith(p));
+}
+
+// ── Manual scan runner ────────────────────────────────────────────────────
+
+/**
+ * Run a manual (user-triggered) scan.
+ * Returns the full formatted output including the plugin header.
+ */
+async function runManualScan(workspaceDir: string, detailed: boolean): Promise<string> {
+  const orchestrator = buildScanDependencies(workspaceDir);
+  const report = await orchestrator.run({ isScheduled: false });
+
+  // Fire plugin telemetry
+  const pluginConfig = loadConfig();
+  const pluginState = loadState();
+  const telemetryClient = new PluginTelemetryClient(pluginConfig, pluginState);
+
+  const stableFails = report.dock_analysis.stable.findings.filter(f => f.result === 'FAIL').length;
+  const stablePasses = report.dock_analysis.stable.findings.filter(f => f.result === 'PASS').length;
+
+  await telemetryClient.ping({
+    version:         report.version,
+    library_version: report.library_version,
+    score:           typeof report.dock_analysis.stable.score === 'number'
+                       ? report.dock_analysis.stable.score
+                       : 'insufficient_data',
+    band:            report.dock_analysis.stable.band,
+    fail_count:      stableFails,
+    pass_count:      stablePasses,
+    is_scheduled:    false,
+  });
+
+  // Update ping state
+  pluginState.total_pings = (pluginState.total_pings ?? 0) + 1;
+  pluginState.last_ping_at = new Date().toISOString();
+  saveState(pluginState);
+
+  const delta: DeltaResult = report.dock_analysis.delta ?? {
+    new_findings: [], resolved_findings: [], new_checks: [],
+  };
+  const staleExclusions = false; // manual scans: no stale exclusion warning needed
+
+  const header = pluginHeader();
+  const body = detailed
+    ? formatDetail(report, delta)
+    : formatSummary(report, delta, staleExclusions);
+  const dashboardLine = `\n📊 View your dashboard: https://clawvitals.io/dashboard`;
+
+  return `${header}\n\n${body}${dashboardLine}`;
 }
 
 function nextCronDescription(cron: string, enabled: boolean): string {
@@ -664,31 +744,61 @@ const clawvitalsPlugin = {
       },
     }), { names: ['clawvitals_configure_webhook'] });
 
-    // ── Cron trigger hook ────────────────────────────────────────────────
-    // When OpenClaw fires the clawvitals:scheduled-scan cron job it starts
-    // an agent session with trigger="cron". We intercept it here, run the
-    // full scan pipeline directly, and short-circuit the LLM by returning
-    // a pre-built reply — no model call needed for a scheduled scan.
+    // ── Scan intent + cron hook ───────────────────────────────────────────
+    //
+    // This hook intercepts two distinct trigger types:
+    //
+    // 1. User-triggered scan intents ("run clawvitals", "show clawvitals details")
+    //    — matches the same patterns as the ClawHub skill's intents, runs the
+    //    full programmatic pipeline instead, and short-circuits the LLM.
+    //    This ensures the plugin always wins when both skill and plugin are installed.
+    //
+    // 2. Cron triggers (trigger="cron", CRON_JOB_NAME in prompt)
+    //    — scheduled scan, silent unless regression/critical found.
     api.on('before_agent_start', async (_event, ctx) => {
-      if (ctx.trigger !== 'cron') return;
-      // Only handle our own cron job — let other jobs pass through
-      if (!(_event.prompt ?? '').includes(CRON_JOB_NAME)) return;
-
+      const prompt = _event.prompt ?? '';
       const workspaceDir = ctx.workspaceDir ?? (api.config as { workspace?: { path?: string } })?.workspace?.path ?? os.homedir();
 
-      try {
-        const alertMessage = await runScheduledScan(workspaceDir);
-        if (alertMessage) {
-          // Return as a prompt override — OpenClaw will deliver this as the agent reply
-          return { prependContext: alertMessage };
+      // ── Cron: scheduled scan ───────────────────────────────────────────
+      if (ctx.trigger === 'cron' && prompt.includes(CRON_JOB_NAME)) {
+        try {
+          const alertMessage = await runScheduledScan(workspaceDir);
+          if (alertMessage) {
+            return { prependContext: alertMessage };
+          }
+          return { prependContext: '✅ ClawVitals scheduled scan complete — no new issues.' };
+        } catch (err) {
+          return {
+            prependContext:
+              `⚠️ ClawVitals scheduled scan failed: ${(err as Error).message ?? 'unknown error'}`,
+          };
         }
-        // Clean run — inject silent acknowledgement so the session closes cleanly
-        return { prependContext: '✅ ClawVitals scheduled scan complete — no new issues.' };
-      } catch (err) {
-        return {
-          prependContext:
-            `⚠️ ClawVitals scheduled scan failed: ${(err as Error).message ?? 'unknown error'}`,
-        };
+      }
+
+      // ── User: detail report request ────────────────────────────────────
+      if (matchesIntent(prompt, DETAIL_PATTERNS)) {
+        try {
+          const output = await runManualScan(workspaceDir, /* detailed */ true);
+          return { prependContext: output };
+        } catch (err) {
+          return {
+            prependContext:
+              `${pluginHeader()}\n\n⚠️ Scan failed: ${(err as Error).message ?? 'unknown error'}`,
+          };
+        }
+      }
+
+      // ── User: standard scan ────────────────────────────────────────────
+      if (matchesIntent(prompt, SCAN_PATTERNS)) {
+        try {
+          const output = await runManualScan(workspaceDir, /* detailed */ false);
+          return { prependContext: output };
+        } catch (err) {
+          return {
+            prependContext:
+              `${pluginHeader()}\n\n⚠️ Scan failed: ${(err as Error).message ?? 'unknown error'}`,
+          };
+        }
       }
     });
   },

@@ -10,6 +10,9 @@ import type { Severity, ClawVitalsConfig } from './types';
 /** ClawVitals skill version (matches package.json) */
 export const SKILL_VERSION = '1.1.2';
 
+/** Plugin version — update on each plugin release. */
+export const PLUGIN_VERSION = '0.1.0';
+
 /** Control library version bundled with this skill release */
 export const LIBRARY_VERSION = '1.0.0';
 
