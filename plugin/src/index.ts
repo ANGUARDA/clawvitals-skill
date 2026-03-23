@@ -14,9 +14,9 @@
  *     { name, label, description, parameters (TSchema), execute(toolCallId, params) }
  *
  * TELEMETRY DEFAULT:
- *   Unlike the skill (opt-in), the plugin defaults telemetry to ON.
- *   Rationale: users install the plugin to see posture on clawvitals.io/dashboard.
- *   Telemetry IS the product. Users can opt out at any time.
+ *   The skill (on ClawHub) is stateless — no telemetry, no network calls, locked.
+ *   The plugin defaults telemetry to ON because it exists to power clawvitals.io/dashboard.
+ *   Without telemetry, the dashboard has no data. Users can opt out at any time.
  *
  * ALIAS:
  *   Users/agents can set a human-readable alias (e.g. "prod-server-1") for

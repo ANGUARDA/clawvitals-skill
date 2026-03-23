@@ -1,11 +1,12 @@
 /**
  * telemetry.ts — Plugin telemetry client.
  *
- * KEY DIFFERENCE FROM SKILL TELEMETRY:
- * The skill (point-in-time, free) has telemetry OFF by default — privacy is a feature.
- * The plugin (persistent, dashboard-connected) has telemetry ON by default — telemetry
- * IS the product. Users install the plugin specifically to track posture over time on
- * clawvitals.io/dashboard. Telemetry is what makes the dashboard work.
+ * The ClawVitals skill (on ClawHub) is stateless and makes no network calls — it has
+ * no telemetry at all. The skill is locked and will not change.
+ *
+ * The plugin is different: it exists specifically to connect your installation to
+ * clawvitals.io/dashboard. Telemetry IS the product — without it, the dashboard has
+ * no data. So the plugin defaults telemetry to ON (opt-out, not opt-in).
  *
  * Users can opt out at any time:
  *   openclaw plugins config clawvitals set telemetry.enabled false
@@ -54,7 +55,8 @@ export class PluginTelemetryClient {
 
   /**
    * Whether telemetry is enabled.
-   * Defaults to TRUE for the plugin (unlike the skill which defaults to false).
+   * Defaults to TRUE — the plugin's purpose is dashboard connectivity.
+   * The skill has no telemetry at all (stateless, no network calls).
    * Users opt OUT rather than opt IN.
    */
   get isEnabled(): boolean {
