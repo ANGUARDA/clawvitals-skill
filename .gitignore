@@ -7,5 +7,9 @@ dist/
 .DS_Store
 coverage/
 package-lock.json
+# Tests are excluded from the root by default (skill has no tests)
+# but plugin tests ARE tracked — override below
 tests/
 *.test.ts
+!plugin/tests/
+!plugin/tests/**
