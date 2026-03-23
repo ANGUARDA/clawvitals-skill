@@ -11,7 +11,7 @@
  *   4. Alert if new critical finding (immediate, regardless of threshold)
  */
 
-import type { PluginConfig } from './types.js';
+import type { PluginConfig } from './plugin-config.js';
 
 export const DEFAULT_CRON = '0 9 * * *'; // 9:00 AM daily
 

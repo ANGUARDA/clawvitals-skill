@@ -11,7 +11,7 @@
  * produces an alert payload and OpenClaw routes it to the user's channels.
  */
 
-import type { PluginConfig } from './types.js';
+import type { PluginConfig } from './plugin-config.js';
 
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 

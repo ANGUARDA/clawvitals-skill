@@ -17,7 +17,7 @@ import type { DeltaDetector } from './scoring/delta';
 import type { ReportGenerator } from './reporting';
 import type { StorageManager } from './reporting/storage';
 import type { ConfigManager } from './config';
-import type { TelemetryClient } from './telemetry';
+import type { TelemetryClient } from './telemetry/index';
 import type { SchedulerManager } from './scheduling';
 
 import type { RunReport } from './types';

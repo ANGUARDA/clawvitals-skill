@@ -18,7 +18,9 @@
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "openclaw": "*",
+    "zod": "^3.22.0"
   },
   "keywords": ["openclaw", "clawvitals", "security", "posture", "plugin"]
 }

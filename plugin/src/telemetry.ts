@@ -29,7 +29,7 @@
  *   - Machine identifiers of any kind (only user-set alias, and only if configured)
  */
 
-import type { PluginConfig, TelemetryPingParams, PluginInstallState } from './types.js';
+import type { PluginConfig, TelemetryPingParams, PluginInstallState } from './plugin-config.js';
 
 const DEFAULT_ENDPOINT = 'https://telemetry.clawvitals.io/ping';
 
@@ -93,7 +93,7 @@ export class PluginTelemetryClient {
         params.alias = alias.slice(0, 64); // enforce max length
       }
 
-      const qs = new URLSearchParams(params as Record<string, string>);
+      const qs = new URLSearchParams(params as unknown as Record<string, string>);
       const url = `${this.endpoint}?${qs.toString()}`;
 
       await fetch(url, {

@@ -33,9 +33,28 @@ import type { OpenClawPluginApi } from 'openclaw/plugin-sdk/core';
 import { emptyPluginConfigSchema } from 'openclaw/plugin-sdk/core';
 import { validateAlias, formatInstallDisplay } from './alias.js';
 import { validateCron, DEFAULT_CRON } from './scheduler.js';
-import type { PluginConfig, PluginInstallState, TrialReminderPayload, TrialStatus } from './types.js';
+import type { PluginConfig, PluginInstallState, TrialReminderPayload, TrialStatus } from './plugin-config.js';
 
-export * from './types.js';
+// ── Scan pipeline imports (for cron-triggered scans) ──────────────────────
+import { CliRunner } from './cli-runner.js';
+import { CollectorOrchestrator } from './collectors/index.js';
+import { ControlEvaluator } from './controls/evaluator.js';
+import { loadControlLibrary } from './controls/library.js';
+import { Scorer } from './scoring/index.js';
+import { DeltaDetector } from './scoring/delta.js';
+import { ReportGenerator } from './reporting/index.js';
+import { StorageManager } from './reporting/storage.js';
+import { ConfigManager } from './config/index.js';
+import { TelemetryClient } from './telemetry/index.js';
+import { SchedulerManager } from './scheduling/index.js';
+import { ScanOrchestrator } from './orchestrator.js';
+import { formatSummary } from './reporting/summary.js';
+import { CRON_JOB_NAME } from './constants.js';
+import { PluginTelemetryClient } from './telemetry.js';
+import { evaluateAlert, resolveAlertConfig } from './alerts.js';
+import type { ScanSnapshot } from './alerts.js';
+
+export * from './plugin-config.js';
 export * from './telemetry.js';
 export * from './scheduler.js';
 export * from './alerts.js';
@@ -89,6 +108,98 @@ function loadState(): PluginInstallState {
 function saveState(state: PluginInstallState): void {
   ensureDir();
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), { mode: 0o600 });
+}
+
+// ── Scan pipeline factory ─────────────────────────────────────────────────
+
+/**
+ * Build the full scan dependency tree.
+ * workspaceDir is the OpenClaw workspace directory (passed from plugin context).
+ */
+function buildScanDependencies(workspaceDir: string): ScanOrchestrator {
+  const cli = new CliRunner('openclaw');
+  const collector = new CollectorOrchestrator(cli);
+  const config = new ConfigManager(workspaceDir);
+  const exclusions = config.getExclusions();
+  const library = loadControlLibrary();
+  const evaluator = new ControlEvaluator(library, exclusions);
+  const scorer = new Scorer();
+  const delta = new DeltaDetector();
+  const storage = new StorageManager(workspaceDir);
+  const reporter = new ReportGenerator(storage);
+  const telemetry = new TelemetryClient();
+  const scheduler = new SchedulerManager(cli);
+  return new ScanOrchestrator(
+    collector, evaluator, scorer, delta, reporter,
+    storage, config, telemetry, scheduler, workspaceDir
+  );
+}
+
+/**
+ * Run a scheduled scan, evaluate alerts, send plugin telemetry.
+ * Returns a summary string to deliver to the user (or null for silent clean runs).
+ */
+async function runScheduledScan(workspaceDir: string): Promise<string | null> {
+  const orchestrator = buildScanDependencies(workspaceDir);
+  const report = await orchestrator.run({ isScheduled: true });
+
+  // Build plugin telemetry ping
+  const pluginConfig = loadConfig();
+  const pluginState = loadState();
+  const telemetryClient = new PluginTelemetryClient(pluginConfig, pluginState);
+
+  const stableFails = report.dock_analysis.stable.findings.filter(f => f.result === 'FAIL').length;
+  const stablePasses = report.dock_analysis.stable.findings.filter(f => f.result === 'PASS').length;
+  const score = report.dock_analysis.stable.score;
+
+  await telemetryClient.ping({
+    version:         report.version,
+    library_version: report.library_version,
+    score:           typeof score === 'number' ? score : 'insufficient_data',
+    band:            report.dock_analysis.stable.band,
+    fail_count:      stableFails,
+    pass_count:      stablePasses,
+    is_scheduled:    true,
+  });
+
+  // Update plugin ping count in state
+  pluginState.total_pings = (pluginState.total_pings ?? 0) + 1;
+  pluginState.last_ping_at = new Date().toISOString();
+  saveState(pluginState);
+
+  // Evaluate alert: compare to previous run snapshot from delta
+  const alertConfig = resolveAlertConfig(pluginConfig);
+  const currentSnapshot: ScanSnapshot = {
+    score:          typeof score === 'number' ? score : 'insufficient_data',
+    band:           report.dock_analysis.stable.band,
+    fail_count:     stableFails,
+    critical_count: report.dock_analysis.stable.findings.filter(
+      f => f.result === 'FAIL' && f.severity === 'critical'
+    ).length,
+    scan_ts: report.meta.scan_ts,
+  };
+
+  // Build previous snapshot from delta data if available
+  const prevFindings = report.dock_analysis.delta?.resolved_findings ?? [];
+  const hasPreviousRun = report.dock_analysis.delta !== undefined;
+  const previousSnapshot: ScanSnapshot | null = hasPreviousRun
+    ? {
+        score:          'insufficient_data', // delta doesn't store prev score; alert logic uses fail_count
+        band:           'unknown',
+        fail_count:     stableFails - (report.dock_analysis.delta?.new_findings?.length ?? 0)
+                        + prevFindings.length,
+        critical_count: 0,
+        scan_ts:        '',
+      }
+    : null;
+
+  const alert = evaluateAlert(currentSnapshot, previousSnapshot, alertConfig);
+  if (alert) {
+    return alert.message + `\n\n📊 View dashboard: https://clawvitals.io/dashboard`;
+  }
+
+  // Silent — no regression, no new criticals. Return null (don't send a message).
+  return null;
 }
 
 function nextCronDescription(cron: string, enabled: boolean): string {
@@ -327,8 +438,38 @@ const clawvitalsPlugin = {
         }
         config.schedule = schedule;
         saveConfig(config);
+
         const isEnabled = schedule.enabled !== false;
         const cron = schedule.cron ?? DEFAULT_CRON;
+
+        // Register or remove the cron job via OpenClaw CLI
+        try {
+          const cli = new CliRunner('openclaw');
+          const scheduler = new SchedulerManager(cli);
+          if (isEnabled) {
+            // ensureSchedule maps the cron expression to a named cadence for
+            // the CLI. We pass the raw cron directly via the custom path.
+            const exists = await scheduler.isScheduled();
+            if (exists) {
+              await cli.run(['cron', 'edit', '--name', CRON_JOB_NAME, '--cron', cron]);
+            } else {
+              await cli.run([
+                'cron', 'add',
+                '--name', CRON_JOB_NAME,
+                '--cron', cron,
+                '--handler', 'clawvitals:scheduled-scan',
+              ]);
+            }
+          } else {
+            await scheduler.removeSchedule();
+          }
+        } catch (err) {
+          return textResult(
+            `⚠️ Config saved but cron registration failed: ${(err as Error).message}\n` +
+            `You can retry with: openclaw cron add --name ${CRON_JOB_NAME} --cron "${cron}" --handler clawvitals:scheduled-scan`
+          );
+        }
+
         return textResult(
           `✅ Schedule updated.\n` +
           `Status:   ${isEnabled ? 'enabled ✅' : 'disabled ❌'}\n` +
@@ -522,6 +663,34 @@ const clawvitalsPlugin = {
         }
       },
     }), { names: ['clawvitals_configure_webhook'] });
+
+    // ── Cron trigger hook ────────────────────────────────────────────────
+    // When OpenClaw fires the clawvitals:scheduled-scan cron job it starts
+    // an agent session with trigger="cron". We intercept it here, run the
+    // full scan pipeline directly, and short-circuit the LLM by returning
+    // a pre-built reply — no model call needed for a scheduled scan.
+    api.on('before_agent_start', async (_event, ctx) => {
+      if (ctx.trigger !== 'cron') return;
+      // Only handle our own cron job — let other jobs pass through
+      if (!(_event.prompt ?? '').includes(CRON_JOB_NAME)) return;
+
+      const workspaceDir = ctx.workspaceDir ?? (api.config as { workspace?: { path?: string } })?.workspace?.path ?? os.homedir();
+
+      try {
+        const alertMessage = await runScheduledScan(workspaceDir);
+        if (alertMessage) {
+          // Return as a prompt override — OpenClaw will deliver this as the agent reply
+          return { prependContext: alertMessage };
+        }
+        // Clean run — inject silent acknowledgement so the session closes cleanly
+        return { prependContext: '✅ ClawVitals scheduled scan complete — no new issues.' };
+      } catch (err) {
+        return {
+          prependContext:
+            `⚠️ ClawVitals scheduled scan failed: ${(err as Error).message ?? 'unknown error'}`,
+        };
+      }
+    });
   },
 };
 
