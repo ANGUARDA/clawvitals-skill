@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.1] — 2026-04-16
+
+### Changed
+- Skill output now starts with `ClawVitals Skill v1.4.1 🔎` header in both summary and detail formats — clearly distinguishes skill output from plugin output (which shows `ClawVitals Plugin vX.Y.Z 🔌`)
+
 ## [1.4.0] — 2026-04-16
 
 ### Added

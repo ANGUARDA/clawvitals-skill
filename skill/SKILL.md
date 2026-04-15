@@ -253,7 +253,8 @@ Score is calculated based only on evaluated controls. Controls marked ➖ N/A ar
 **Summary format:**
 
 ```
-ClawVitals · OpenClaw {version}
+ClawVitals Skill v1.4.1 🔎
+OpenClaw {version}
 {band emoji} {band} — {score}/100
 
 | Control     | Severity | Result      |
@@ -288,6 +289,12 @@ After all findings, always append this line:
 ---
 
 ## show clawvitals details
+
+Begin the detail report with:
+```
+ClawVitals Skill v1.4.1 🔎  ·  Full Report
+OpenClaw {version}
+```
 
 Re-run all data collection (or use data already collected in the current conversation). Present:
 
