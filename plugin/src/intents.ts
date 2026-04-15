@@ -22,6 +22,18 @@ export const DETAIL_PATTERNS: readonly string[] = [
   'clawvitals details',
 ];
 
+/** Patterns that trigger an expanded scan (--expanded flag). */
+export const EXPANDED_SCAN_PATTERNS: readonly string[] = [
+  'run clawvitals --expanded',
+  'clawvitals expanded scan',
+  'clawvitals expanded',
+];
+
+/** Patterns that trigger an explicit standard scan (--standard flag). */
+export const STANDARD_SCAN_PATTERNS: readonly string[] = [
+  'run clawvitals --standard',
+];
+
 /**
  * Returns true if the prompt starts with any of the given patterns,
  * case-insensitively. Trims leading/trailing whitespace before matching.
@@ -29,4 +41,13 @@ export const DETAIL_PATTERNS: readonly string[] = [
 export function matchesIntent(prompt: string, patterns: readonly string[]): boolean {
   const normalised = prompt.trim().toLowerCase();
   return patterns.some(p => normalised.startsWith(p));
+}
+
+/**
+ * Parse the scan mode from a user prompt.
+ * Returns "expanded" if the prompt matches expanded patterns, otherwise "standard".
+ */
+export function parseMode(prompt: string): 'standard' | 'expanded' {
+  if (matchesIntent(prompt, EXPANDED_SCAN_PATTERNS)) return 'expanded';
+  return 'standard';
 }

@@ -356,6 +356,12 @@ export interface RunReport {
     skipped: ControlEvaluation[];
     /** Changes from previous scan */
     delta: DeltaResult;
+    /** Expanded control results (system-level checks, not scored) */
+    expanded?: {
+      findings: ExpandedEvaluation[];
+      new_failures: number;
+      new_passes: number;
+    };
   };
 }
 
@@ -443,6 +449,114 @@ export interface RunMeta {
   success: boolean;
   /** Whether this was a scheduled scan */
   is_scheduled: boolean;
+}
+
+// ── Expanded Collectors ─────────────────────────────────────────
+
+/** Result from the Ollama exposure collector */
+export interface OllamaResult {
+  ok: boolean;
+  bound_to_public: boolean;
+  host: string | null;
+  error: string | null;
+}
+
+/** A single exposed port finding */
+export interface ExposedPort {
+  port: number;
+  service: string;
+  bind: string;
+}
+
+/** Result from the network port scan collector */
+export interface NetworkResult {
+  ok: boolean;
+  exposed_ports: ExposedPort[];
+  error: string | null;
+}
+
+/** A single secret finding (never includes actual values) */
+export interface SecretFinding {
+  file: string;
+  pattern: string;
+  line_hint: number;
+}
+
+/** Result from the secrets-files collector */
+export interface SecretsFilesResult {
+  ok: boolean;
+  findings: SecretFinding[];
+  error: string | null;
+}
+
+/** Result from the secrets-history collector */
+export interface SecretsHistoryResult {
+  ok: boolean;
+  findings: SecretFinding[];
+  error: string | null;
+}
+
+/** Result from the Cloudflare tunnel collector */
+export interface CloudflareTunnelResult {
+  ok: boolean;
+  tunnel_found: boolean;
+  unauthenticated_hostnames: string[];
+  error: string | null;
+}
+
+/** A single Docker container finding */
+export interface DockerContainer {
+  id: string;
+  name: string;
+  privileged: boolean;
+  root_user: boolean;
+  dangerous_caps: string[];
+}
+
+/** Result from the Docker collector */
+export interface DockerResult {
+  ok: boolean;
+  docker_available: boolean;
+  containers: DockerContainer[];
+  error: string | null;
+}
+
+/** Result from the OS updates collector */
+export interface OsUpdatesResult {
+  ok: boolean;
+  platform: 'macos' | 'linux' | 'unknown';
+  auto_updates_enabled: boolean;
+  error: string | null;
+}
+
+/** Result from the disk encryption collector */
+export interface DiskEncryptionResult {
+  ok: boolean;
+  platform: 'macos' | 'linux' | 'unknown';
+  encrypted: boolean;
+  error: string | null;
+}
+
+/** Combined results from all expanded collectors */
+export interface ExpandedCollectorResult {
+  ollama: OllamaResult;
+  network: NetworkResult;
+  secrets_files: SecretsFilesResult;
+  secrets_history: SecretsHistoryResult;
+  cloudflare_tunnel: CloudflareTunnelResult;
+  docker: DockerResult;
+  os_updates: OsUpdatesResult;
+  disk_encryption: DiskEncryptionResult;
+}
+
+/** Evaluation result for a single expanded control */
+export interface ExpandedEvaluation {
+  control_id: string;
+  name: string;
+  severity: Severity;
+  result: 'PASS' | 'FAIL' | 'SKIP' | 'ERROR';
+  evidence: string;
+  remediation: string;
 }
 
 /** Content of the last-success.json pointer file */

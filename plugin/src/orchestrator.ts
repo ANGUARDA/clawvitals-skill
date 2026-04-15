@@ -20,8 +20,10 @@ import type { ConfigManager } from './config';
 import type { TelemetryClient } from './telemetry/index';
 import type { SchedulerManager } from './scheduling';
 
-import type { RunReport } from './types';
+import type { RunReport, ExpandedCollectorResult } from './types';
 import { loadControlLibrary } from './controls/library';
+import { ExpandedCollectorOrchestrator } from './collectors/expanded/index';
+import { ExpandedEvaluator } from './controls/expanded-evaluator';
 import {
   SKILL_VERSION,
   WORKSPACE_DIR,
@@ -32,6 +34,8 @@ import {
 export interface ScanOptions {
   /** Whether this scan was triggered by cron */
   isScheduled: boolean;
+  /** Scan mode: "standard" runs only OpenClaw checks, "expanded" adds system-level checks */
+  mode?: 'standard' | 'expanded';
 }
 
 /**
@@ -94,9 +98,22 @@ export class ScanOrchestrator {
       },
       async () => {
         const cvConfig = this.config.getConfig();
+        const isExpanded = options.mode === 'expanded';
 
-        // Collect data from all sources
-        const collected = await this.collector.collect();
+        // Collect data from all sources (+ expanded if requested)
+        let expandedResult: ExpandedCollectorResult | null = null;
+        let collected;
+        if (isExpanded) {
+          const expandedOrchestrator = new ExpandedCollectorOrchestrator();
+          const [standardResult, expResult] = await Promise.all([
+            this.collector.collect(),
+            expandedOrchestrator.collect(),
+          ]);
+          collected = standardResult;
+          expandedResult = expResult;
+        } else {
+          collected = await this.collector.collect();
+        }
 
         // Load control library
         const library = loadControlLibrary();
@@ -149,6 +166,19 @@ export class ScanOrchestrator {
             delta: { new_findings: [], resolved_findings: [], new_checks: [] },
           },
         };
+
+        // Evaluate expanded controls if requested
+        if (isExpanded && expandedResult) {
+          const expandedEvaluator = new ExpandedEvaluator();
+          const expandedFindings = expandedEvaluator.evaluate(expandedResult);
+          const newFailures = expandedFindings.filter(f => f.result === 'FAIL').length;
+          const newPasses = expandedFindings.filter(f => f.result === 'PASS').length;
+          report.dock_analysis.expanded = {
+            findings: expandedFindings,
+            new_failures: newFailures,
+            new_passes: newPasses,
+          };
+        }
 
         // Load previous run and detect delta
         const previousRun = this.storage.loadLastRun();

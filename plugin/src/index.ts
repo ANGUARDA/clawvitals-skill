@@ -50,9 +50,9 @@ import { SchedulerManager } from './scheduling/index.js';
 import { ScanOrchestrator } from './orchestrator.js';
 import { formatSummary } from './reporting/summary.js';
 import { formatDetail } from './reporting/detail.js';
-import type { DeltaResult } from './types.js';
+import type { DeltaResult, ExpandedEvaluation } from './types.js';
 import { CRON_JOB_NAME, PLUGIN_VERSION } from './constants.js';
-import { matchesIntent, SCAN_PATTERNS, DETAIL_PATTERNS } from './intents.js';
+import { matchesIntent, SCAN_PATTERNS, DETAIL_PATTERNS, EXPANDED_SCAN_PATTERNS, STANDARD_SCAN_PATTERNS, parseMode } from './intents.js';
 import { PluginTelemetryClient } from './telemetry.js';
 import { evaluateAlert, resolveAlertConfig } from './alerts.js';
 import type { ScanSnapshot } from './alerts.js';
@@ -254,7 +254,7 @@ function pluginHeader(): string {
 // the plugin intercepts them before the skill (or LLM) gets a chance.
 
 // Re-export for convenience (consumers can import from either location)
-export { matchesIntent, SCAN_PATTERNS, DETAIL_PATTERNS } from './intents.js';
+export { matchesIntent, SCAN_PATTERNS, DETAIL_PATTERNS, EXPANDED_SCAN_PATTERNS, STANDARD_SCAN_PATTERNS, parseMode } from './intents.js';
 
 // ── Manual scan runner ────────────────────────────────────────────────────
 
@@ -262,9 +262,9 @@ export { matchesIntent, SCAN_PATTERNS, DETAIL_PATTERNS } from './intents.js';
  * Run a manual (user-triggered) scan.
  * Returns the full formatted output including the plugin header.
  */
-async function runManualScan(workspaceDir: string, detailed: boolean): Promise<string> {
+async function runManualScan(workspaceDir: string, detailed: boolean, mode: 'standard' | 'expanded' = 'standard'): Promise<string> {
   const orchestrator = buildScanDependencies(workspaceDir);
-  const report = await orchestrator.run({ isScheduled: false });
+  const report = await orchestrator.run({ isScheduled: false, mode });
 
   // Fire plugin telemetry
   const pluginConfig = loadConfig();
@@ -331,7 +331,24 @@ async function runManualScan(workspaceDir: string, detailed: boolean): Promise<s
     : formatSummary(report, delta, staleExclusions);
   const dashboardLine = `\n📊 View your dashboard: https://clawvitals.io/dashboard`;
 
-  let output = `${header}\n\n${body}${tamperNote}${driftNote}${dashboardLine}`;
+  // Format expanded controls section if present
+  let expandedSection = '';
+  if (report.dock_analysis.expanded) {
+    const { findings, new_failures, new_passes } = report.dock_analysis.expanded;
+    const skipped = findings.filter(f => f.result === 'SKIP').length;
+    expandedSection = '\n\n━━━ EXPANDED CONTROLS ━━━━━━━━━━━━━━━━━━━━━';
+    for (const f of findings) {
+      const icon = f.result === 'PASS' ? '✅' : f.result === 'FAIL' ? '❌' : f.result === 'SKIP' ? '⏭️' : '⚠️';
+      expandedSection += `\n${icon} ${f.control_id} ${f.name}: ${f.result}`;
+      if (f.result === 'FAIL') {
+        expandedSection += `\n   Evidence: ${f.evidence}`;
+        expandedSection += `\n   Fix: ${f.remediation}`;
+      }
+    }
+    expandedSection += `\nExpanded: ${new_failures} new findings · ${new_passes} passed · ${skipped} skipped`;
+  }
+
+  let output = `${header}\n\n${body}${expandedSection}${tamperNote}${driftNote}${dashboardLine}`;
 
   // Heartbeat suggestion on first scan
   if (pluginState.total_pings === 1) {
@@ -1014,6 +1031,32 @@ const clawvitalsPlugin = {
       if (matchesIntent(prompt, DETAIL_PATTERNS)) {
         try {
           const output = await runManualScan(workspaceDir, /* detailed */ true);
+          return { prependContext: output };
+        } catch (err) {
+          return {
+            prependContext:
+              `${pluginHeader()}\n\n⚠️ Scan failed: ${(err as Error).message ?? 'unknown error'}`,
+          };
+        }
+      }
+
+      // ── User: expanded scan ─────────────────────────────────────────────
+      if (matchesIntent(prompt, EXPANDED_SCAN_PATTERNS)) {
+        try {
+          const output = await runManualScan(workspaceDir, /* detailed */ false, 'expanded');
+          return { prependContext: output };
+        } catch (err) {
+          return {
+            prependContext:
+              `${pluginHeader()}\n\n⚠️ Expanded scan failed: ${(err as Error).message ?? 'unknown error'}`,
+          };
+        }
+      }
+
+      // ── User: explicit standard scan ────────────────────────────────────
+      if (matchesIntent(prompt, STANDARD_SCAN_PATTERNS)) {
+        try {
+          const output = await runManualScan(workspaceDir, /* detailed */ false, 'standard');
           return { prependContext: output };
         } catch (err) {
           return {
