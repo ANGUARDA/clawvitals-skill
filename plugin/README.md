@@ -8,6 +8,7 @@ Programmatic security health check for self-hosted [OpenClaw](https://openclaw.a
 
 ## Contents
 
+- [Skill vs Plugin](#skill-vs-plugin)
 - [Install](#install)
 - [Uninstall](#uninstall)
 - [Commands](#commands)
@@ -15,8 +16,33 @@ Programmatic security health check for self-hosted [OpenClaw](https://openclaw.a
 - [Example output](#example-output)
 - [Regression alerts](#regression-alerts)
 - [Scheduling](#scheduling)
+- [Fleet Management](#fleet-management)
+- [Exclusion management](#exclusion-management)
 - [Telemetry](#telemetry)
+- [Configuration](#configuration)
+- [Directory structure](#directory-structure)
 - [License](#license)
+
+---
+
+## Skill vs Plugin
+
+The **ClawVitals skill** (on ClawHub) is stateless — it runs a point-in-time scan, prints the result, and stores nothing. No telemetry, no network calls, no persistent state. It is locked and will not change.
+
+The **plugin** is the upgrade path. It adds everything the skill deliberately omits:
+
+| Feature | Skill | Plugin |
+|---|---|---|
+| Scan & score | ✅ | ✅ |
+| Remediation steps | ✅ | ✅ |
+| Experimental controls | ✅ | ✅ |
+| Scan history & delta detection | ❌ | ✅ |
+| Recurring scheduled scans | ❌ | ✅ |
+| Regression + critical alerts | ❌ | ✅ |
+| Exclusion management | ❌ | ✅ |
+| Posture trend on dashboard | ❌ | ✅ |
+| Fleet management (alias) | ❌ | ✅ |
+| Telemetry | none | **on by default (opt-out)** |
 
 ---
 
@@ -100,12 +126,14 @@ After uninstalling, `run clawvitals` will fall back to the skill if it is still 
 | `run clawvitals --plugin` | Force the plugin to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
 | `run clawvitals --skill` | Force the skill to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
 | `show clawvitals details` | Full report with all findings and remediation steps |
+| `show clawvitals identity` | Show install UUID, alias, and dashboard link |
 | `clawvitals version` | Show plugin version, control library version, and OpenClaw version |
 | `clawvitals status` | Show last scan time, score, schedule, and trial/plan status |
-| `clawvitals set schedule` | Configure recurring scan cadence |
-| `clawvitals set alias <name>` | Set a friendly name for this host in reports |
-| `clawvitals exclude <control-id>` | Suppress a finding with a reason |
+| `clawvitals set schedule <cadence>` | Configure recurring scan cadence |
+| `clawvitals set alias <name>` | Set a friendly name for this host in reports and dashboard |
+| `clawvitals exclude <control-id> <reason>` | Suppress a finding with a reason |
 | `clawvitals exclusions` | List all active exclusions |
+| `clawvitals telemetry on\|off` | Enable or disable telemetry |
 | `clawvitals trial` | Show trial status and upgrade options |
 | `clawvitals upgrade` | Upgrade to a paid plan |
 | `clawvitals configure webhook` | Set up a webhook for alert delivery |
@@ -273,7 +301,7 @@ Reply "show clawvitals details" for remediation steps on all findings.
 
 ### Alert rules
 
-- Alerts fire **only for new Critical or High findings** in the stable control set (FR-20).
+- Alerts fire **only for new Critical or High findings** in the stable control set.
 - **Medium, Low, and Info** findings are in the full report but do not trigger an alert on their own.
 - If no new Critical/High findings, scheduled scans run **silently** — no message is sent.
 - On the **first ever scan** (no prior baseline), all findings are treated as new and the full report is sent.
@@ -310,16 +338,134 @@ clawvitals set schedule none
 
 ---
 
+## Fleet Management
+
+Give each installation a human-readable alias for the dashboard:
+
+```
+set clawvitals alias prod-server-1
+set clawvitals alias dev-laptop
+```
+
+The alias is **always user-set** — never derived from the machine hostname, username, or any system identifier. Each installation also has a random UUID generated at install time (`iid`). The dashboard shows both:
+
+```
+prod-server-1   (iid: a3f2...)   85/100  🟢  last scan: 2h ago
+dev-laptop      (iid: 7c1b...)   70/100  🟡  last scan: 1d ago
+<unnamed>       (iid: 9e4d...)   45/100  🔴  last scan: 3d ago
+```
+
+To view your current install identity:
+
+```
+show clawvitals identity
+```
+
+Output:
+
+```
+ClawVitals Plugin v0.1.0 🔌
+
+Install ID (iid): a3f2c8e1-...
+Alias:            prod-server-1
+Dashboard:        https://dashboard.clawvitals.io
+```
+
+---
+
+## Exclusion management
+
+Suppress findings that are intentional or not applicable to your setup:
+
+```
+clawvitals exclude NC-OC-005 reason "personal assistant setup"
+clawvitals exclude NC-AUTH-001 reason "no reverse proxy, local-only" expires 2026-09-01
+clawvitals exclusions
+```
+
+Exclusions are stored in `~/.openclaw/workspace/clawvitals/exclusions.json` (mode 600). They appear as `EXCLUDED` in scan reports — never silently hidden. Expired exclusions are automatically inactivated on the next scan.
+
+---
+
 ## Telemetry
 
-ClawVitals Plugin sends anonymous telemetry to `telemetry.clawvitals.io/ping`. This is on by default and helps us understand which controls fire most often, so we can improve remediation guidance.
+The plugin defaults telemetry **on**. This is intentional: the plugin exists to power [clawvitals.io/dashboard](https://clawvitals.io/dashboard) — without telemetry, the dashboard has no data.
 
-**What's sent:** scan count, score band, control pass/fail counts, plugin version, OpenClaw version. No hostnames, no file contents, no personal data.
+**What is sent (nothing else):**
+- Plugin version, control library version
+- Numeric score + band (green/amber/red)
+- FAIL count, PASS count
+- Total lifetime scan count (integer)
+- Scheduled/manual flag
+- Random install UUID generated at plugin install time (no PII)
+- **Alias** — only if you explicitly set one (see [Fleet Management](#fleet-management))
 
-**To opt out:**
+**What is never sent:**
+- Hostnames, usernames, IP addresses, or file paths
+- Finding details, control IDs, or failure reasons
+- OpenClaw config, tokens, credentials, or secrets
+- Any machine-derived identifier
+
+**Opt out at any time:**
 
 ```
 clawvitals telemetry off
+```
+
+---
+
+## Configuration
+
+```json5
+{
+  plugins: {
+    entries: {
+      clawvitals: {
+        telemetry: {
+          enabled: true,          // opt OUT by setting false
+          alias: "prod-server-1"  // optional — for fleet management
+        },
+        schedule: {
+          enabled: true,
+          cron: "0 9 * * *"       // 9 AM daily (default)
+        },
+        alerts: {
+          on_regression: true,    // alert on score drop or new FAILs
+          on_new_critical: true,  // alert immediately on new critical finding
+          threshold: "high"       // minimum severity to alert
+        },
+        retention_days: 90
+      }
+    }
+  }
+}
+```
+
+---
+
+## Directory structure
+
+```
+plugin/
+├── src/
+│   ├── index.ts           ← plugin entry point + tool registration + cron hook
+│   ├── plugin-config.ts   ← plugin config, state, and trial types
+│   ├── telemetry.ts       ← PluginTelemetryClient (opt-out default, alias support)
+│   ├── scheduler.ts       ← cron config resolution + validation
+│   ├── alerts.ts          ← regression and critical finding alert evaluation
+│   ├── alias.ts           ← alias validation + fleet display formatting
+│   ├── orchestrator.ts    ← full scan pipeline (ScanOrchestrator)
+│   ├── collectors/        ← data collectors (security-audit, health, version, update-status)
+│   ├── controls/          ← control library + evaluator
+│   ├── scoring/           ← scorer + delta detection
+│   ├── reporting/         ← summary, detail, storage
+│   ├── config/            ← ConfigManager (config.json, usage.json, exclusions.json)
+│   ├── telemetry/         ← TelemetryClient (skill telemetry — used internally by pipeline)
+│   ├── scheduling/        ← SchedulerManager (openclaw cron wrappers)
+│   └── types.ts           ← scan pipeline types (shared with skill pipeline)
+├── openclaw.plugin.json
+├── package.json
+└── tsconfig.json
 ```
 
 ---
