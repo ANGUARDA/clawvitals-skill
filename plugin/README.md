@@ -13,6 +13,7 @@ Programmatic security health check for self-hosted [OpenClaw](https://openclaw.a
 - [Uninstall](#uninstall)
 - [Commands](#commands)
 - [Running ClawVitals — skill vs plugin](#running-clawvitals--skill-vs-plugin)
+- [Standard vs Expanded controls](#standard-vs-expanded-controls)
 - [Example output](#example-output)
 - [Regression alerts](#regression-alerts)
 - [Scheduling](#scheduling)
@@ -122,7 +123,9 @@ After uninstalling, `run clawvitals` will fall back to the skill if it is still 
 
 | Command | Description |
 |---|---|
-| `run clawvitals` | Run a full security scan |
+| `run clawvitals` | Run a full security scan (standard controls) |
+| `run clawvitals --expanded` | Run scan with expanded system-level controls (see [expanded controls](#standard-vs-expanded-controls)) |
+| `run clawvitals --standard` | Run scan with standard controls only (explicit) |
 | `run clawvitals --plugin` | Force the plugin to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
 | `run clawvitals --skill` | Force the skill to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
 | `show clawvitals details` | Full report with all findings and remediation steps |
@@ -133,6 +136,7 @@ After uninstalling, `run clawvitals` will fall back to the skill if it is still 
 | `clawvitals set alias <name>` | Set a friendly name for this host in reports and dashboard |
 | `clawvitals exclude <control-id> <reason>` | Suppress a finding with a reason |
 | `clawvitals exclusions` | List all active exclusions |
+| `clawvitals set mode standard\|expanded` | Set default control set for all future scans |
 | `clawvitals telemetry on\|off` | Enable or disable telemetry |
 | `clawvitals trial` | Show trial status and upgrade options |
 | `clawvitals upgrade` | Upgrade to a paid plan |
@@ -164,6 +168,85 @@ ClawVitals Plugin v0.1.0 🔌
 ```
 
 The skill does not emit this header. If you don't see it, the skill ran.
+
+---
+
+## Standard vs Expanded controls
+
+By default the plugin runs in **standard mode** — the same OpenClaw-native control set as the skill, plus scan history, delta detection, and alerting. Standard mode uses only the OpenClaw CLI (`openclaw security audit`, `openclaw health`, etc.) and requires no additional permissions.
+
+**Expanded mode** adds a second layer of system-level checks that require direct filesystem and shell access. These are the checks the skill can never do.
+
+### Switch to expanded mode
+
+```
+run clawvitals --expanded         # one-off expanded scan
+run clawvitals --standard         # one-off standard scan (explicit default)
+```
+
+Or set it as your default in config:
+
+```
+clawvitals set mode expanded      # all future scans use expanded controls
+clawvitals set mode standard      # revert to standard (default)
+```
+
+Or via `openclaw.plugin.json`:
+```json
+{
+  "controls": { "mode": "expanded" }
+}
+```
+
+### What expanded mode adds
+
+| ID | Control | Severity | What it checks |
+|---|---|---|---|
+| **NC-OLLAMA-001** | Ollama not externally accessible | 🔴 Critical | Checks whether Ollama is running and if port 11434 is bound to a public interface. 175,000+ exposed Ollama instances found in 2026 — active "LLMjacking" attacks target this. |
+| **NC-NET-001** | Management interfaces not internet-exposed | 🔴 Critical | Scans open ports for SSH (22), Docker API (2375/2376), and common admin dashboards (8080, 9000) and checks whether they're reachable beyond localhost. |
+| **NC-SECRET-001** | No secrets in env/config files | 🔴 Critical | Regex-scans `~/.env`, `.envrc`, and common config files for API key patterns. The most common cause of credential compromise. |
+| **NC-SECRET-002** | No API keys in shell history | 🟠 High | Scans `~/.zsh_history` and `~/.bash_history` for secret patterns (API keys, tokens, passwords passed as arguments). Commonly overlooked. |
+| **NC-TUNNEL-001** | Cloudflare tunnel endpoints authenticated | 🟠 High | Checks `~/.cloudflared/` config to confirm tunnel-exposed services require authentication. Unauthenticated tunnels are an open door. |
+| **NC-DOCKER-001** | Containers not running as root or privileged | 🟠 High | Runs `docker inspect` on running containers to check for `--privileged`, root user, or dangerous capability grants. Aligns with CIS Docker Benchmark. |
+| **NC-OS-001** | OS auto-updates enabled | 🟠 High | Checks that automatic OS updates are enabled (`softwareupdate` on macOS, `unattended-upgrades` on Linux). Often neglected on self-hosted machines. |
+| **NC-OS-002** | Disk encryption enabled | 🟠 High | Checks FileVault status (macOS) or LUKS encryption (Linux). Critical for Mac Mini and home server deployments where physical access is a real risk. |
+
+All expanded checks are **read-only** — nothing is modified. See [SECURITY.md](./SECURITY.md) for the full list of commands and file paths accessed.
+
+### Expanded mode output
+
+When expanded mode runs, the report clearly labels the section:
+
+```
+ClawVitals Plugin v0.1.0 🔌  ·  Expanded Scan
+
+━━━ STANDARD CONTROLS ━━━━━━━━━━━━━━━━━━━━━
+[standard control results — see example output below]
+
+━━━ EXPANDED CONTROLS ━━━━━━━━━━━━━━━━━━━━━
+
+🔴 CRITICAL  NC-OLLAMA-001  Ollama externally accessible
+Evidence: Port 11434 bound to 0.0.0.0 — accessible from outside localhost
+Fix: Set OLLAMA_HOST=127.0.0.1 in your Ollama environment and restart:
+     launchctl setenv OLLAMA_HOST "127.0.0.1"   # macOS
+     systemctl edit ollama                        # Linux (add Environment=OLLAMA_HOST=127.0.0.1)
+→ https://clawvitals.io/docs/NC-OLLAMA-001
+
+🟠 HIGH  NC-SECRET-002  API key pattern found in shell history
+Evidence: Pattern matching sk-... found in ~/.zsh_history (line ~342)
+Fix: Run `history -c` to clear in-memory history, then manually edit ~/.zsh_history
+     to remove the line. Rotate the exposed key immediately.
+→ https://clawvitals.io/docs/NC-SECRET-002
+
+✅ NC-NET-001    No management interfaces exposed
+✅ NC-SECRET-001  No secrets found in env/config files
+✅ NC-TUNNEL-001  Cloudflare tunnel endpoints authenticated
+✅ NC-DOCKER-001  Containers not privileged
+✅ NC-OS-001     Auto-updates enabled
+✅ NC-OS-002     Disk encryption enabled (FileVault ON)
+
+Expanded score: 2 new findings  ·  6 passed
+```
 
 ---
 
@@ -433,6 +516,9 @@ clawvitals telemetry off
           on_regression: true,    // alert on score drop or new FAILs
           on_new_critical: true,  // alert immediately on new critical finding
           threshold: "high"       // minimum severity to alert
+        },
+        controls: {
+          mode: "standard"        // "standard" (default) or "expanded" (adds system-level checks)
         },
         retention_days: 90
       }

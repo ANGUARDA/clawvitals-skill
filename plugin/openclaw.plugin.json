@@ -1,8 +1,44 @@
 {
   "id": "clawvitals",
   "name": "ClawVitals",
-  "description": "Security posture tracking, recurring scans, delta alerts, and fleet dashboard for OpenClaw installations.",
+  "description": "Security posture tracking for OpenClaw installations. Runs recurring scans, detects regressions, alerts on new critical findings, and tracks your security score over time. Reads OpenClaw CLI output and optionally scans the local filesystem and network (expanded mode). Sends anonymous scan summaries to telemetry.clawvitals.io — opt out with `clawvitals telemetry off`.",
   "version": "0.1.0",
+  "permissions": {
+    "filesystem": [
+      "~/.openclaw/workspace/clawvitals/"
+    ],
+    "filesystemOptional": [
+      "~/.env",
+      "~/.bashrc",
+      "~/.zshrc",
+      "~/.bash_history",
+      "~/.zsh_history",
+      "~/.cloudflared/config.yml"
+    ],
+    "network": [
+      "https://telemetry.clawvitals.io/ping"
+    ],
+    "commands": [
+      "openclaw security audit --json",
+      "openclaw health --json",
+      "openclaw update status --json",
+      "openclaw --version",
+      "openclaw cron list",
+      "openclaw cron add",
+      "openclaw cron edit"
+    ],
+    "commandsOptional": [
+      "curl -s --max-time 5 http://localhost:11434/api/tags",
+      "lsof -i :11434",
+      "docker ps --format json",
+      "docker inspect",
+      "fdesetup status",
+      "lsblk -f",
+      "softwareupdate --list",
+      "ss -tlnp",
+      "netstat -tlnp"
+    ]
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -13,17 +49,17 @@
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Send anonymous scan summaries to telemetry.clawvitals.io. Enabled by default — this powers the dashboard. Disable with clawvitals telemetry off.",
+            "description": "Send anonymous scan summaries to telemetry.clawvitals.io. Enabled by default — this powers the dashboard. Disable with `clawvitals telemetry off`. See SECURITY.md for full details of what is sent.",
             "default": true
           },
           "endpoint": {
             "type": "string",
-            "description": "Telemetry endpoint URL.",
+            "description": "Telemetry endpoint URL. Override to point at a self-hosted instance.",
             "default": "https://telemetry.clawvitals.io/ping"
           },
           "alias": {
             "type": "string",
-            "description": "Human-readable name for this installation on the clawvitals.io/dashboard. Used instead of the raw install UUID. Useful for fleet management (e.g. 'prod-server-1', 'dev-laptop'). Max 64 chars.",
+            "description": "Human-readable name for this installation on the clawvitals.io/dashboard. Used instead of the raw install UUID. Useful for fleet management (e.g. 'prod-server-1', 'dev-laptop'). Max 64 chars. Only sent in telemetry if explicitly set.",
             "maxLength": 64
           }
         }
@@ -66,6 +102,18 @@
           }
         }
       },
+      "controls": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["standard", "expanded"],
+            "description": "Control set to use. 'standard' (default) runs only OpenClaw-native checks using the OpenClaw CLI. 'expanded' adds system-level checks — Ollama exposure, open ports, Docker container privileges, disk encryption, OS updates, shell history secrets, and Cloudflare tunnel auth. Expanded mode requires additional filesystem and shell access (see SECURITY.md).",
+            "default": "standard"
+          }
+        }
+      },
       "retention_days": {
         "type": "integer",
         "description": "Number of days to retain local scan history.",
@@ -83,7 +131,11 @@
     },
     "telemetry.enabled": {
       "label": "Telemetry",
-      "hint": "Powers the dashboard. Anonymous scan summaries only — no config, credentials, or finding details."
+      "hint": "Powers the dashboard. Anonymous scan summaries only — no config, credentials, or finding details. See SECURITY.md."
+    },
+    "controls.mode": {
+      "label": "Control set",
+      "hint": "'standard' uses only OpenClaw CLI — no extra permissions needed. 'expanded' adds system-level checks (Ollama, ports, Docker, disk encryption, OS updates, secrets in shell history)."
     }
   }
 }
