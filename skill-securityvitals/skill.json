@@ -1,6 +1,6 @@
 {
   "name": "securityvitals",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "always": false,
   "displayName": "SecurityVitals",
   "description": "Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.",
