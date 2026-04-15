@@ -155,11 +155,10 @@ describe('Integration: clean baseline (no findings, up-to-date)', () => {
     expect(ev!.result).toBe('PASS');
   });
 
-  it('deferred controls are SKIP', () => {
+  it('no deferred controls remain in library', () => {
     const evaluations = evaluator.evaluate(collected);
     const deferred = evaluations.filter(e => e.status === 'deferred');
-    expect(deferred.length).toBeGreaterThan(0);
-    deferred.forEach(e => expect(e.result).toBe('SKIP'));
+    expect(deferred.length).toBe(0);
   });
 
   it('experimental controls are SKIP', () => {

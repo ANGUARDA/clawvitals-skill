@@ -2,7 +2,7 @@
  * controls/evaluator.ts — ControlEvaluator: per-control PASS/FAIL/SKIP/ERROR logic.
  *
  * Given collected data and the control library, evaluates every control
- * and returns a ControlEvaluation array. Implements all 6 stable controls
+ * and returns a ControlEvaluation array. Implements all 9 stable controls
  * with full logic and 8 experimental controls as stubs returning SKIP.
  */
 
@@ -116,6 +116,12 @@ export class ControlEvaluator {
         return this.evalNCVERS001(collected, base);
       case 'NC-VERS-002':
         return this.evalNCVERS002(collected, base);
+      case 'NC-OC-012':
+        return this.evalNCOC012(collected, base);
+      case 'NC-OC-013':
+        return this.evalNCOC013(collected, base);
+      case 'NC-OC-014':
+        return this.evalNCOC014(collected, base);
       default:
         return {
           ...base,
@@ -383,6 +389,75 @@ export class ControlEvaluator {
       evidence: `Within version currency threshold (${distance} minor versions behind)`,
       remediation: null,
     };
+  }
+
+  /** NC-OC-012: Gateway authentication not configured */
+  private evalNCOC012(
+    collected: CollectorResult,
+    base: ControlEvaluation
+  ): ControlEvaluation {
+    if (!collected.security_audit.ok || !collected.security_audit.data) {
+      return {
+        ...base,
+        result: 'ERROR',
+        error_detail: `Security audit source unavailable: ${collected.security_audit.error ?? 'unknown error'}`,
+      };
+    }
+
+    const found = this.hasFinding(
+      collected.security_audit.data.findings,
+      'gateway.loopback_no_auth'
+    );
+
+    return found
+      ? { ...base, result: 'FAIL', evidence: 'Gateway has no authentication token configured', remediation: base.remediation }
+      : { ...base, result: 'PASS', evidence: 'Gateway authentication is configured', remediation: null };
+  }
+
+  /** NC-OC-013: Browser control requires gateway authentication */
+  private evalNCOC013(
+    collected: CollectorResult,
+    base: ControlEvaluation
+  ): ControlEvaluation {
+    if (!collected.security_audit.ok || !collected.security_audit.data) {
+      return {
+        ...base,
+        result: 'ERROR',
+        error_detail: `Security audit source unavailable: ${collected.security_audit.error ?? 'unknown error'}`,
+      };
+    }
+
+    const found = this.hasFinding(
+      collected.security_audit.data.findings,
+      'browser.control_no_auth'
+    );
+
+    return found
+      ? { ...base, result: 'FAIL', evidence: 'Browser control enabled without gateway authentication', remediation: base.remediation }
+      : { ...base, result: 'PASS', evidence: 'Browser control auth check passed', remediation: null };
+  }
+
+  /** NC-OC-014: Gateway auth token meets minimum length */
+  private evalNCOC014(
+    collected: CollectorResult,
+    base: ControlEvaluation
+  ): ControlEvaluation {
+    if (!collected.security_audit.ok || !collected.security_audit.data) {
+      return {
+        ...base,
+        result: 'ERROR',
+        error_detail: `Security audit source unavailable: ${collected.security_audit.error ?? 'unknown error'}`,
+      };
+    }
+
+    const found = this.hasFinding(
+      collected.security_audit.data.findings,
+      'gateway.token_too_short'
+    );
+
+    return found
+      ? { ...base, result: 'FAIL', evidence: 'Gateway auth token is below minimum required length', remediation: base.remediation }
+      : { ...base, result: 'PASS', evidence: 'Gateway auth token meets minimum length requirement', remediation: null };
   }
 
   // ── Helper methods ──────────────────────────────────────────────

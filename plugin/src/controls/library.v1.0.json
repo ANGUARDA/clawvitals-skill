@@ -3,30 +3,6 @@
   "generated": "2026-03-19T00:00:00Z",
   "controls": [
     {
-      "id": "NC-OC-001",
-      "name": "Webhook signing secret configured",
-      "domain": "OC",
-      "severity": "critical",
-      "mode": 1,
-      "status": "deferred",
-      "introduced_in": "1.0.0",
-      "description": "Verifies that a webhook signing secret is configured when webhooks are enabled.",
-      "why_it_matters": "Without a signing secret, any actor with knowledge of your webhook URL can send arbitrary commands to your OpenClaw installation.",
-      "check": {
-        "source": "openclaw_security_audit",
-        "source_type": "authoritative",
-        "prerequisite": "attack_surface.hooks_webhooks == true",
-        "prerequisite_skip_reason": "Webhooks not enabled \u2014 check not applicable",
-        "condition": "findings does NOT contain checkId matching signing-secret-related pattern"
-      },
-      "evidence_template": "Signing secret warning present: {present}",
-      "remediation": "Set the webhook signing secret environment variable before starting the gateway. See: https://clawvitals.io/docs/NC-OC-001",
-      "references": [
-        "https://clawvitals.io/docs/NC-OC-001"
-      ],
-      "false_positive_notes": "None expected on enabled-webhook installs \u2014 this is a binary configuration check."
-    },
-    {
       "id": "NC-OC-002",
       "name": "Sandbox mode appropriate for deployment context",
       "domain": "OC",
@@ -40,7 +16,7 @@
         "source": "openclaw_security_audit",
         "source_type": "authoritative",
         "prerequisite": "security.trust_model.multi_user_heuristic checkId present in findings",
-        "prerequisite_skip_reason": "Single-user deployment \u2014 sandbox check not applicable",
+        "prerequisite_skip_reason": "Single-user deployment — sandbox check not applicable",
         "condition": "security.trust_model.multi_user_heuristic checkId present indicates sandbox concern"
       },
       "evidence_template": "Multi-user heuristic detected: {present}. Sandbox mode concern flagged.",
@@ -48,7 +24,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-OC-002"
       ],
-      "false_positive_notes": "Single-user personal-assistant deployments will not trigger this \u2014 only multi-user heuristic scenarios."
+      "false_positive_notes": "Single-user personal-assistant deployments will not trigger this — only multi-user heuristic scenarios."
     },
     {
       "id": "NC-OC-003",
@@ -59,7 +35,7 @@
       "status": "stable",
       "introduced_in": "1.0.0",
       "description": "Checks that gateway.nodes.denyCommands entries are all valid, recognized command names.",
-      "why_it_matters": "Ineffective deny entries give a false sense of security \u2014 commands you think are blocked may still be executable.",
+      "why_it_matters": "Ineffective deny entries give a false sense of security — commands you think are blocked may still be executable.",
       "check": {
         "source": "openclaw_security_audit",
         "source_type": "authoritative",
@@ -70,7 +46,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-OC-003"
       ],
-      "false_positive_notes": "No known false positives \u2014 OpenClaw validates command names against its own registry."
+      "false_positive_notes": "No known false positives — OpenClaw validates command names against its own registry."
     },
     {
       "id": "NC-OC-004",
@@ -92,7 +68,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-OC-004"
       ],
-      "false_positive_notes": "May fire on intentionally open demo/test groups \u2014 use exclusions for known-safe configurations."
+      "false_positive_notes": "May fire on intentionally open demo/test groups — use exclusions for known-safe configurations."
     },
     {
       "id": "NC-OC-005",
@@ -130,7 +106,7 @@
         "source": "openclaw_security_audit",
         "source_type": "derived",
         "prerequisite": "security.trust_model.multi_user_heuristic checkId present in findings",
-        "prerequisite_skip_reason": "Single-user deployment \u2014 workspace scope check not applicable",
+        "prerequisite_skip_reason": "Single-user deployment — workspace scope check not applicable",
         "condition": "fs.workspaceOnly=false in multi_user_heuristic detail text"
       },
       "evidence_template": "Workspace-only file access: {status}",
@@ -160,7 +136,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-OC-007"
       ],
-      "false_positive_notes": "Standard pnpm installs may show 'unknown' status due to missing lockfiles \u2014 this is expected and does not indicate a problem."
+      "false_positive_notes": "Standard pnpm installs may show 'unknown' status due to missing lockfiles — this is expected and does not indicate a problem."
     },
     {
       "id": "NC-OC-008",
@@ -204,7 +180,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-OC-009"
       ],
-      "false_positive_notes": "None \u2014 this is a factual check against the registry."
+      "false_positive_notes": "None — this is a factual check against the registry."
     },
     {
       "id": "NC-AUTH-001",
@@ -292,7 +268,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-VERS-001"
       ],
-      "false_positive_notes": "None \u2014 this is a factual check against the registry."
+      "false_positive_notes": "None — this is a factual check against the registry."
     },
     {
       "id": "NC-VERS-002",
@@ -316,7 +292,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-VERS-002"
       ],
-      "false_positive_notes": "None \u2014 based on factual version comparison."
+      "false_positive_notes": "None — based on factual version comparison."
     },
     {
       "id": "NC-VERS-004",
@@ -338,7 +314,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-VERS-004"
       ],
-      "false_positive_notes": "None expected \u2014 based on official Node.js release schedule."
+      "false_positive_notes": "None expected — based on official Node.js release schedule."
     },
     {
       "id": "NC-VERS-005",
@@ -360,7 +336,7 @@
       "references": [
         "https://clawvitals.io/docs/NC-VERS-005"
       ],
-      "false_positive_notes": "Uncertain data source \u2014 may not produce results on current OpenClaw versions."
+      "false_positive_notes": "Uncertain data source — may not produce results on current OpenClaw versions."
     },
     {
       "id": "NC-OC-011",
@@ -379,9 +355,80 @@
         "condition": "No suspicious patterns found in any cognitive file"
       },
       "evidence_template": "{n} suspicious pattern(s) found across {files} file(s)",
-      "remediation": "Review the flagged file and line number manually. If the content is legitimate, it may be a false positive \u2014 use clawvitals exclude NC-OC-011 to suppress. If unexpected, investigate immediately.",
-      "references": ["https://clawvitals.io/docs/nc-oc-011"],
-      "false_positive_notes": "High FP risk for instruction_override patterns \u2014 these phrases legitimately appear in security documentation. Always review manually before acting."
+      "remediation": "Review the flagged file and line number manually. If the content is legitimate, it may be a false positive — use clawvitals exclude NC-OC-011 to suppress. If unexpected, investigate immediately.",
+      "references": [
+        "https://clawvitals.io/docs/nc-oc-011"
+      ],
+      "false_positive_notes": "High FP risk for instruction_override patterns — these phrases legitimately appear in security documentation. Always review manually before acting."
+    },
+    {
+      "id": "NC-OC-012",
+      "name": "Gateway authentication not configured",
+      "domain": "OC",
+      "severity": "critical",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "1.1.0",
+      "description": "Checks that the OpenClaw gateway has an authentication token configured.",
+      "why_it_matters": "A gateway without an auth token is accessible to anyone who can reach it. This is the most direct path to unauthorised agent access — an attacker can send commands, read responses, and impersonate the operator without any credential.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "prerequisite": null,
+        "condition": "findings does NOT contain checkId gateway.loopback_no_auth"
+      },
+      "evidence_template": "Gateway auth not configured: {present}",
+      "remediation": "Set a gateway auth token: openclaw gateway auth set --type bearer --token <your-token>. Choose a strong random token (minimum 32 characters).",
+      "references": [
+        "https://clawvitals.io/docs/nc-oc-012"
+      ],
+      "false_positive_notes": "None expected — this is a binary configuration check."
+    },
+    {
+      "id": "NC-OC-013",
+      "name": "Browser control requires gateway authentication",
+      "domain": "OC",
+      "severity": "critical",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "1.1.0",
+      "description": "Checks that gateway authentication is configured when browser control is enabled.",
+      "why_it_matters": "Browser control exposes a powerful interface for interacting with the agent. Without gateway auth, browser control is accessible to anyone who can reach the gateway URL — enabling unauthenticated command execution.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "prerequisite": null,
+        "condition": "findings does NOT contain checkId browser.control_no_auth"
+      },
+      "evidence_template": "Browser control without auth: {present}",
+      "remediation": "Set a gateway auth token before using browser control: openclaw gateway auth set --type bearer --token <your-token>. Or disable browser control if not in use.",
+      "references": [
+        "https://clawvitals.io/docs/nc-oc-013"
+      ],
+      "false_positive_notes": "Only fires when browser control is enabled AND gateway has no auth. If browser control is disabled, this check is SKIPPED."
+    },
+    {
+      "id": "NC-OC-014",
+      "name": "Gateway authentication token meets minimum length",
+      "domain": "OC",
+      "severity": "high",
+      "mode": 1,
+      "status": "stable",
+      "introduced_in": "1.1.0",
+      "description": "Checks that the gateway authentication token meets the minimum length requirement.",
+      "why_it_matters": "Short auth tokens are vulnerable to brute-force attacks. The OpenClaw gateway uses bearer token auth — a short token provides significantly less protection than a properly-generated random token of sufficient length.",
+      "check": {
+        "source": "openclaw_security_audit",
+        "source_type": "authoritative",
+        "prerequisite": null,
+        "condition": "findings does NOT contain checkId gateway.token_too_short"
+      },
+      "evidence_template": "Gateway token too short: {present}",
+      "remediation": "Generate a stronger token: openssl rand -hex 32. Set it with: openclaw gateway auth set --type bearer --token <new-token>.",
+      "references": [
+        "https://clawvitals.io/docs/nc-oc-014"
+      ],
+      "false_positive_notes": "Only fires when a gateway auth token is set but is below minimum length. If no token is set at all, NC-OC-012 fires instead."
     }
   ]
 }
