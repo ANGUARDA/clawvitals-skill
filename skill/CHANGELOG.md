@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.3] — 2026-04-16
+
+### Fixed
+- Added `displayName: ClawVitals` to SKILL.md frontmatter — fixes ClawHub listing title showing as "Skill" instead of "ClawVitals"
+
 ## [1.4.2] — 2026-04-16
 
 ### Changed

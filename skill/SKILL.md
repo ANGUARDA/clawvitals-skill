@@ -1,5 +1,6 @@
 ---
 name: clawvitals
+displayName: ClawVitals
 description: Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.
 homepage: https://clawvitals.io
 tags: [security, audit, health-check, openclaw, monitoring, vitals, security-vitals]
@@ -252,7 +253,7 @@ Score is calculated based only on evaluated controls. Controls marked ➖ N/A ar
 **Summary format:**
 
 ```
-ClawVitals Skill v1.4.2 🔎
+ClawVitals Skill v1.4.3 🔎
 OpenClaw {version}
 {band emoji} {band} — {score}/100
 
@@ -291,7 +292,7 @@ After all findings, always append this line:
 
 Begin the detail report with:
 ```
-ClawVitals Skill v1.4.2 🔎  ·  Full Report
+ClawVitals Skill v1.4.3 🔎  ·  Full Report
 OpenClaw {version}
 ```
 
