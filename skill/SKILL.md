@@ -8,7 +8,7 @@ metadata: {"openclaw": {"requires": {"bins": ["openclaw", "node"]}, "minVersion"
 
 # ClawVitals
 
-Security health check for self-hosted OpenClaw installations. Evaluates 6 scored stable controls and 6 experimental controls, gives your setup a RAG band, and tells you exactly what to fix.
+Security health check for self-hosted OpenClaw installations. Evaluates 9 scored stable controls and 6 experimental controls, gives your setup a RAG band, and tells you exactly what to fix.
 
 **This skill is stateless and does not store scan history. The skill itself makes no network calls. Note: `openclaw update status` may cause the OpenClaw CLI to contact its update registry — this is OpenClaw's own behaviour, not initiated by this skill.**
 
@@ -72,7 +72,7 @@ Returns a string like `v22.22.1`. Extract the major version number.
 
 ### Step 2 — Evaluate stable controls (scored)
 
-These 6 controls contribute to the score. Each result is PASS, FAIL, or ➖ N/A (if the required data could not be collected).
+These 9 controls contribute to the score. Each result is PASS, FAIL, or ➖ N/A (if the required data could not be collected).
 
 ---
 
@@ -115,6 +115,36 @@ These 6 controls contribute to the score. Each result is PASS, FAIL, or ➖ N/A 
 - When FAIL, show the user:
   > `gateway.trustedProxies` is empty. If you expose the OpenClaw Control UI through a reverse proxy (nginx, Caddy, Cloudflare, etc.), set `gateway.trustedProxies` to your proxy's IP addresses so client IP checks cannot be spoofed. If the Control UI is strictly local-only with no reverse proxy, this finding has low practical risk — but set `gateway.trustedProxies: []` explicitly to document the intent.
   > Full fix guide: clawvitals.io/docs/nc-auth-001
+
+---
+
+**NC-OC-012 | Critical | Gateway authentication not configured**
+- PASS if: `findings[]` does NOT contain `checkId = "gateway.loopback_no_auth"`
+- FAIL if: `findings[]` DOES contain `checkId = "gateway.loopback_no_auth"`
+- N/A if: security audit failed or returned unparseable output
+- When FAIL, show the user:
+  > Your OpenClaw gateway has no authentication token configured. Anyone who can reach your gateway URL can send commands to your agent with no credentials required. Set a strong token immediately: `openclaw gateway auth set --type bearer --token $(openssl rand -hex 32)` then restart the gateway.
+  > Full fix guide: clawvitals.io/docs/nc-oc-012
+
+---
+
+**NC-OC-013 | Critical | Browser control requires gateway authentication**
+- PASS if: `findings[]` does NOT contain `checkId = "browser.control_no_auth"`
+- FAIL if: `findings[]` DOES contain `checkId = "browser.control_no_auth"`
+- N/A if: security audit failed or returned unparseable output
+- When FAIL, show the user:
+  > Browser control is enabled but the gateway has no authentication token. This exposes a powerful command interface to anyone who can reach the gateway — no credentials needed. Either set gateway auth (`openclaw gateway auth set --type bearer --token <token>`) or disable browser control if it's not in use.
+  > Full fix guide: clawvitals.io/docs/nc-oc-013
+
+---
+
+**NC-OC-014 | High | Gateway auth token meets minimum length**
+- PASS if: `findings[]` does NOT contain `checkId = "gateway.token_too_short"`
+- FAIL if: `findings[]` DOES contain `checkId = "gateway.token_too_short"`
+- N/A if: security audit failed or returned unparseable output
+- When FAIL, show the user:
+  > Your gateway auth token is below the minimum recommended length and is more vulnerable to brute-force attacks. Generate a stronger token: `openssl rand -hex 32` and set it with `openclaw gateway auth set --type bearer --token <new-token>`.
+  > Full fix guide: clawvitals.io/docs/nc-oc-014
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "clawvitals",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "always": false,
   "displayName": "ClawVitals",
   "description": "Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.",
@@ -9,8 +9,8 @@
   "homepage": "https://clawvitals.io",
   "repository": "https://github.com/ANGUARDA/clawvitals-skill",
   "minOpenClawVersion": "2026.3.0",
-  "controlLibraryVersion": "1.0.0",
-  "controlLibraryVersionRange": ">=1.0.0 <2.0.0",
+  "controlLibraryVersion": "1.1.0",
+  "controlLibraryVersionRange": ">=1.1.0 <2.0.0",
   "permissions": [
     "exec:openclaw:security-audit",
     "exec:openclaw:health",

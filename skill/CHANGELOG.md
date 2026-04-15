@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-04-16
+
+### Added
+- NC-OC-012 (Critical) — Gateway authentication not configured. Detects `gateway.loopback_no_auth` checkId — fires when the OpenClaw gateway has no bearer token set.
+- NC-OC-013 (Critical) — Browser control requires gateway authentication. Detects `browser.control_no_auth` — fires when browser control is enabled with no gateway auth.
+- NC-OC-014 (High) — Gateway auth token meets minimum length. Detects `gateway.token_too_short` — fires when the configured token is below OpenClaw's minimum length requirement.
+
+### Changed
+- Control count updated: 6 → 9 scored stable controls
+- Control library version bumped: 1.0.0 → 1.1.0
+- Removed NC-OC-001 (Webhook signing secret) — permanently deferred. The underlying OpenClaw feature (`hooks.webhooks` signing secret) is not user-configurable. No user-facing change — control was always SKIPPED.
+
 ## [1.2.0] — 2026-03-21
 
 ### Changed
