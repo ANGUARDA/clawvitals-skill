@@ -27,11 +27,9 @@ show clawvitals details     → full report with remediation steps
 
 ## How to run a scan
 
-When the user says "run clawvitals" or similar, execute ALL of the following commands and collect their full output **before** evaluating anything.
+When the user says "run clawvitals" or similar, execute the following commands. Extract only the specific fields listed for each command — do not store or reproduce raw output. Never display API keys, tokens, credentials, secrets, or any sensitive values that may appear in command output.
 
-**Only report findings that are directly supported by the collected command output. Do not infer, guess, or invent checks that are not explicitly covered below. If a check cannot be evaluated reliably, report it as ➖ N/A rather than guessing.**
-
-**Do not reproduce raw CLI output in your response. Extract only the specific fields needed to evaluate each control. Never display API keys, tokens, credentials, secrets, or sensitive values that may appear in command output.**
+**Only report findings that are directly supported by the extracted fields below. Do not infer, guess, or invent checks. If a check cannot be evaluated reliably, report it as ➖ N/A.**
 
 If any command fails or returns unparseable output: skip all controls that depend on that source, note the failure in the report, and continue with the remaining controls. Do not abort the scan.
 
@@ -41,32 +39,33 @@ If any command fails or returns unparseable output: skip all controls that depen
 ```
 openclaw security audit --json
 ```
-Returns JSON with `findings[]`. Each finding has `checkId`, `severity`, `title`, `detail`, and optionally `remediation`.
+Extract only: `findings[].checkId` and `findings[].detail` (for the `summary.attack_surface` finding only). Discard all other fields. Do not display any finding detail text in your response.
 
 **Health check:**
 ```
 openclaw health --json
 ```
-Returns JSON with `channels{}`. Each channel has `configured` (boolean), `probe.ok` (boolean), `probe.error` (string), and for iMessage specifically: `cliPath` (string or null).
+Extract only: for each channel entry — `configured` (boolean), `probe.ok` (boolean), `probe.error` (string if present), and for iMessage specifically: `cliPath` (string or null). Discard all other fields.
 
 **Version:**
 ```
 openclaw --version
 ```
-Returns a string like `OpenClaw 2026.3.13 (61d171a)`. Extract the version number (e.g. `2026.3.13`).
+Extract only: the version string (e.g. `2026.3.13`) from output like `OpenClaw 2026.3.13 (61d171a)`.
 Note: OpenClaw uses date-based versioning in `YYYY.M.D` format — the second segment is the month, not a semver minor.
 
 **Update status:**
 ```
 openclaw update status --json
 ```
-Returns JSON with `availability.hasRegistryUpdate` (boolean) and `update.registry.latestVersion` (string or null).
+Extract only: `availability.hasRegistryUpdate` (boolean) and `update.registry.latestVersion` (string or null).
+Note: this command may cause the OpenClaw CLI to contact its update registry — this is OpenClaw's own behaviour, not initiated by this skill.
 
 **Node version:**
 ```
 node --version
 ```
-Returns a string like `v22.22.1`. Extract the major version number.
+Extract only: the major version number (e.g. `22` from `v22.22.1`).
 
 ---
 
@@ -253,7 +252,7 @@ Score is calculated based only on evaluated controls. Controls marked ➖ N/A ar
 **Summary format:**
 
 ```
-ClawVitals Skill v1.4.1 🔎
+ClawVitals Skill v1.4.2 🔎
 OpenClaw {version}
 {band emoji} {band} — {score}/100
 
@@ -292,7 +291,7 @@ After all findings, always append this line:
 
 Begin the detail report with:
 ```
-ClawVitals Skill v1.4.1 🔎  ·  Full Report
+ClawVitals Skill v1.4.2 🔎  ·  Full Report
 OpenClaw {version}
 ```
 

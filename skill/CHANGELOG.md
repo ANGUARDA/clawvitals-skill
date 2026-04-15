@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.4.2] — 2026-04-16
+
+### Changed
+- Tightened data collection instructions: now specifies exact fields to extract per command rather than "collect full output" — addresses ClawHub Instruction Scope scanner flag
+- `openclaw update status` network note moved inline to that command only (not in general preamble)
+
 ## [1.4.1] — 2026-04-16
 
 ### Changed
