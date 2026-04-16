@@ -146,5 +146,20 @@
       "label": "Control set",
       "hint": "'standard' uses only OpenClaw CLI \u2014 no extra permissions needed. 'expanded' adds system-level checks (Ollama, ports, Docker, disk encryption, OS updates, secrets in shell history)."
     }
+  },
+  "requires": {
+    "bins": [
+      "openclaw"
+    ],
+    "binsOptional": [
+      "lsof",
+      "ss",
+      "netstat",
+      "docker",
+      "fdesetup",
+      "lsblk",
+      "softwareupdate",
+      "curl"
+    ]
   }
 }
