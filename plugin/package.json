@@ -1,5 +1,5 @@
 {
-  "name": "@clawvitals/plugin",
+  "name": "@bk-cm/clawvitals",
   "version": "1.0.0",
   "description": "ClawVitals plugin \u2014 recurring scans, posture history, and fleet dashboard",
   "type": "module",
