@@ -1,8 +1,8 @@
 {
   "id": "clawvitals",
   "name": "ClawVitals",
-  "description": "Security posture tracking for OpenClaw installations. Runs recurring scans, detects regressions, alerts on new critical findings, and tracks your security score over time. Reads OpenClaw CLI output and optionally scans the local filesystem and network (expanded mode). Sends anonymous scan summaries to telemetry.clawvitals.io — opt out with `clawvitals telemetry off`.",
-  "version": "0.1.0",
+  "description": "Security vitals checker for OpenClaw, providing enhanced checks and functionality beyond the ClawVitals skill (https://clawhub.ai/bk-cm/clawvitals). Checks your installation for common misconfigurations and security issues, with scheduled scans, delta detection, regression alerts, and scan history. Full details: https://clawvitals.io/plugin",
+  "version": "1.0.0",
   "permissions": {
     "filesystem": [
       "~/.openclaw/workspace/clawvitals/"
@@ -49,7 +49,7 @@
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Send anonymous scan summaries to telemetry.clawvitals.io. Enabled by default — this powers the dashboard. Disable with `clawvitals telemetry off`. See SECURITY.md for full details of what is sent.",
+            "description": "Send anonymous scan summaries to telemetry.clawvitals.io. Enabled by default \u2014 this powers the dashboard. Disable with `clawvitals telemetry off`. See SECURITY.md for full details of what is sent.",
             "default": true
           },
           "endpoint": {
@@ -96,7 +96,13 @@
           },
           "threshold": {
             "type": "string",
-            "enum": ["critical", "high", "medium", "low", "info"],
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "info"
+            ],
             "description": "Minimum severity level to trigger alerts.",
             "default": "high"
           }
@@ -108,8 +114,11 @@
         "properties": {
           "mode": {
             "type": "string",
-            "enum": ["standard", "expanded"],
-            "description": "Control set to use. 'standard' (default) runs only OpenClaw-native checks using the OpenClaw CLI. 'expanded' adds system-level checks — Ollama exposure, open ports, Docker container privileges, disk encryption, OS updates, shell history secrets, and Cloudflare tunnel auth. Expanded mode requires additional filesystem and shell access (see SECURITY.md).",
+            "enum": [
+              "standard",
+              "expanded"
+            ],
+            "description": "Control set to use. 'standard' (default) runs only OpenClaw-native checks using the OpenClaw CLI. 'expanded' adds system-level checks \u2014 Ollama exposure, open ports, Docker container privileges, disk encryption, OS updates, shell history secrets, and Cloudflare tunnel auth. Expanded mode requires additional filesystem and shell access (see SECURITY.md).",
             "default": "standard"
           }
         }
@@ -131,11 +140,11 @@
     },
     "telemetry.enabled": {
       "label": "Telemetry",
-      "hint": "Powers the dashboard. Anonymous scan summaries only — no config, credentials, or finding details. See SECURITY.md."
+      "hint": "Powers the dashboard. Anonymous scan summaries only \u2014 no config, credentials, or finding details. See SECURITY.md."
     },
     "controls.mode": {
       "label": "Control set",
-      "hint": "'standard' uses only OpenClaw CLI — no extra permissions needed. 'expanded' adds system-level checks (Ollama, ports, Docker, disk encryption, OS updates, secrets in shell history)."
+      "hint": "'standard' uses only OpenClaw CLI \u2014 no extra permissions needed. 'expanded' adds system-level checks (Ollama, ports, Docker, disk encryption, OS updates, secrets in shell history)."
     }
   }
 }

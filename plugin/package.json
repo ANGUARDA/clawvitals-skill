@@ -1,12 +1,14 @@
 {
   "name": "@clawvitals/plugin",
-  "version": "0.1.0",
-  "description": "ClawVitals plugin — recurring scans, posture history, and fleet dashboard",
+  "version": "1.0.0",
+  "description": "ClawVitals plugin \u2014 recurring scans, posture history, and fleet dashboard",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "openclaw": {
-    "extensions": ["./dist/index.js"]
+    "extensions": [
+      "./dist/index.js"
+    ]
   },
   "scripts": {
     "build": "tsc",
@@ -25,7 +27,13 @@
     "openclaw": "*",
     "zod": "^3.22.0"
   },
-  "keywords": ["openclaw", "clawvitals", "security", "posture", "plugin"],
+  "keywords": [
+    "openclaw",
+    "clawvitals",
+    "security",
+    "posture",
+    "plugin"
+  ],
   "author": "ANGUARDA",
   "license": "MIT",
   "repository": {
