@@ -6,7 +6,7 @@
  * Unknown platforms return platform='unknown' so the evaluator can SKIP.
  */
 
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import type { OsUpdatesResult } from '../../types';
@@ -14,7 +14,7 @@ import type { OsUpdatesResult } from '../../types';
 /** Check macOS auto-update status via softwareupdate. */
 function checkMacOS(): OsUpdatesResult {
   try {
-    const output = execSync('softwareupdate -l 2>&1', { encoding: 'utf8', timeout: 30000 });
+    const output = runExpanded('softwareupdate -l 2>&1', 30000);
     // If output says "No new software available", auto-updates are working
     const upToDate = output.includes('No new software available');
     return { ok: true, platform: 'macos', auto_updates_enabled: upToDate, error: null };

@@ -6,7 +6,7 @@
  * as exposed — localhost-only bindings are not reported.
  */
 
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import type { NetworkResult, ExposedPort } from '../../types';
 
 export const MANAGEMENT_PORTS: Array<{ port: number; service: string }> = [
@@ -25,7 +25,7 @@ export const MANAGEMENT_PORTS: Array<{ port: number; service: string }> = [
 /** Attempt to detect a port's bind address via lsof. Returns null if lsof is unavailable. */
 function tryLsof(port: number): { bound: boolean; bind: string } | null {
   try {
-    const output = execSync(`lsof -i :${port} -sTCP:LISTEN`, { encoding: 'utf8', timeout: 5000 });
+    const output = runExpanded(`lsof -i :${port} -sTCP:LISTEN`, 5000);
     const lines = output.split('\n').filter(l => l.trim().length > 0);
     for (const line of lines.slice(1)) {
       if (line.match(/\*:\d+|0\.0\.0\.0:\d+|\[::\]:\d+/)) {
@@ -43,7 +43,7 @@ function tryLsof(port: number): { bound: boolean; bind: string } | null {
 /** Attempt to detect a port's bind address via ss (Linux fallback). Returns null if ss is unavailable. */
 function trySs(port: number): { bound: boolean; bind: string } | null {
   try {
-    const output = execSync(`ss -tlnp sport = :${port}`, { encoding: 'utf8', timeout: 5000 });
+    const output = runExpanded(`ss -tlnp sport = :${port}`, 5000);
     const lines = output.split('\n').filter(l => l.trim().length > 0);
     for (const line of lines.slice(1)) {
       if (line.includes('0.0.0.0:') || line.includes('*:') || line.includes('[::]:')) {

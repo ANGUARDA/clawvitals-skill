@@ -10,7 +10,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import type { CloudflareTunnelResult } from '../../types';
 
 const CONFIG_PATHS = [
@@ -75,7 +75,7 @@ function detectOtherTunnels(cfConfigFound: boolean): string[] {
   const tunnels: string[] = [];
 
   try {
-    const psOutput = execSync('ps aux', { encoding: 'utf8', timeout: 3000 });
+    const psOutput = runExpanded('ps aux', 3000);
     const processes = ['ngrok', 'bore', 'frpc'];
     if (!cfConfigFound) processes.push('cloudflared');
 
@@ -90,7 +90,7 @@ function detectOtherTunnels(cfConfigFound: boolean): string[] {
   }
 
   try {
-    const funnelOutput = execSync('tailscale funnel status', { encoding: 'utf8', timeout: 3000 });
+    const funnelOutput = runExpanded('tailscale funnel status', 3000);
     if (funnelOutput.trim().length > 0) {
       tunnels.push('tailscale funnel');
     }

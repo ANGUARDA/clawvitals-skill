@@ -6,7 +6,7 @@
  * bound execution time. Docker not being installed results in a graceful SKIP.
  */
 
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import type { DockerResult, DockerContainer } from '../../types';
 
 const MAX_CONTAINERS = 20;
@@ -24,7 +24,7 @@ export function collectDocker(): DockerResult {
   try {
     let ids: string;
     try {
-      ids = execSync('docker ps --format "{{.ID}}"', { encoding: 'utf8', timeout: 5000 });
+      ids = runExpanded('docker ps --format "{{.ID}}"', 5000);
     } catch {
       // Docker not installed or not running
       return { ok: true, docker_available: false, containers: [], error: null };
@@ -43,7 +43,7 @@ export function collectDocker(): DockerResult {
 
     for (const id of containerIds) {
       try {
-        const raw = execSync(`docker inspect ${id}`, { encoding: 'utf8', timeout: 5000 });
+        const raw = runExpanded(`docker inspect ${id}`, 5000);
         const inspected = JSON.parse(raw) as Array<{
           Id: string;
           Name: string;

@@ -7,7 +7,7 @@
  * If lsof exits non-zero (port not in use), returns a safe default (not bound).
  */
 
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import type { OllamaResult } from '../../types';
 
 /** Parse port from OLLAMA_HOST env var. Returns 11434 if unset or unparseable. */
@@ -35,7 +35,7 @@ export function collectOllama(): OllamaResult {
   const port = discoverPort();
 
   try {
-    const output = execSync(`lsof -i :${port}`, { encoding: 'utf8', timeout: 5000 });
+    const output = runExpanded(`lsof -i :${port}`, 5000);
     const lines = output.split('\n').filter(l => l.trim().length > 0);
 
     // Skip header line

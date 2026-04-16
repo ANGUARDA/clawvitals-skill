@@ -6,14 +6,14 @@
  * Unknown platforms return platform='unknown' so the evaluator can SKIP.
  */
 
-import { execSync } from 'node:child_process';
+import { runExpanded } from './runner';
 import * as os from 'node:os';
 import type { DiskEncryptionResult } from '../../types';
 
 /** Check macOS FileVault status. */
 function checkMacOS(): DiskEncryptionResult {
   try {
-    const output = execSync('fdesetup status', { encoding: 'utf8', timeout: 5000 });
+    const output = runExpanded('fdesetup status', 5000);
     const encrypted = output.includes('FileVault is On');
     return { ok: true, platform: 'macos', encrypted, error: null };
   } catch {
@@ -24,7 +24,7 @@ function checkMacOS(): DiskEncryptionResult {
 /** Check Linux LUKS encryption via lsblk. */
 function checkLinux(): DiskEncryptionResult {
   try {
-    const output = execSync('lsblk -f', { encoding: 'utf8', timeout: 5000 });
+    const output = runExpanded('lsblk -f', 5000);
     const encrypted = output.includes('crypto_LUKS');
     return { ok: true, platform: 'linux', encrypted, error: null };
   } catch {
