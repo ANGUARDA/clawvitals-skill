@@ -1,10 +1,28 @@
 # ClawVitals
 
-Security health check for self-hosted [OpenClaw](https://openclaw.ai) installations.
+Security vitals checker for self-hosted [OpenClaw](https://openclaw.ai) installations.
 
-Check your OpenClaw security vitals — scans your installation, scores your setup, and shows you exactly what to fix.
+🌐 **[clawvitals.io](https://clawvitals.io)** · [Docs](https://clawvitals.io/docs) · [Plugin](https://clawvitals.io/plugin)
 
-🌐 **[clawvitals.io](https://clawvitals.io)**
+---
+
+## What this repo contains
+
+This repository contains two distinct products built from the same codebase:
+
+### 1. ClawVitals Skill (`skill/`)
+
+An instruction-based OpenClaw skill — stateless, no runtime code, no permissions beyond running five OpenClaw CLI commands. Published on ClawHub at [clawhub.ai/bk-cm/clawvitals](https://clawhub.ai/bk-cm/clawvitals).
+
+Install: `npx clawhub install clawvitals`
+
+### 2. ClawVitals Plugin (`plugin/`)
+
+A full OpenClaw code plugin — compiled TypeScript, persistent state, scheduled scans, delta detection, telemetry, and optional expanded system-level checks. Published on ClawHub at [clawhub.ai/plugins/claw-security-vitals](https://clawhub.ai/plugins/claw-security-vitals).
+
+Install: `openclaw plugins install clawhub:claw-security-vitals`
+
+The plugin is **not** instruction-only — it contains a compiled codebase (`dist/`) and an `openclaw.plugin.json` manifest. See [plugin/SECURITY.md](plugin/SECURITY.md) for a full audit of what the plugin does, what files it reads, what commands it runs, and what telemetry it sends.
 
 ---
 
@@ -12,44 +30,35 @@ Check your OpenClaw security vitals — scans your installation, scores your set
 
 ```
 skill/      → ClawHub skill (instruction-based, stateless)
-plugin/     → OpenClaw plugin (runtime, persistent) — coming soon
+plugin/     → ClawHub code plugin (compiled TypeScript, persistent)
 shared/
   controls/ → Control library (shared between skill and plugin)
+scripts/    → Publishing scripts
 ```
 
-## Skills
-
-Two ClawHub slugs, one source. Both are built from `skill/SKILL.md` — content is identical, only the name differs.
-
-| Slug | Install | Purpose |
-|---|---|---|
-| `clawvitals` | `npx clawhub install clawvitals` | Primary brand |
-| `securityvitals` | `npx clawhub install securityvitals` | Search discoverability ("security vitals") |
-
-Both point to clawvitals.io. One may be deprecated in future.
-
-→ [skill/README.md](skill/README.md) · [clawvitals.io/docs](https://clawvitals.io/docs)
+---
 
 ## Publishing
 
-Use the publish script to keep both skills in sync:
+### Skill (two slugs, one source)
+
+Both `clawvitals` and `securityvitals` are built from `skill/SKILL.md`.
 
 ```bash
 ./scripts/publish.sh <version> "<changelog message>"
 ```
 
-This publishes `clawvitals` and `securityvitals` atomically from the same `skill/` source. Never publish one without the other.
-
-## Plugin
-
-The plugin adds scan history, delta detection, scheduled scans, exclusion management, and telemetry. Coming soon.
+### Plugin
 
 ```bash
-# When available:
-openclaw plugins install @anguarda/clawvitals
+npx clawhub package publish plugin/ \
+  --family code-plugin \
+  --name "claw-security-vitals" \
+  --display-name "ClawVitals" \
+  --version <version>
 ```
 
-→ [plugin/README.md](plugin/README.md)
+---
 
 ## License
 
