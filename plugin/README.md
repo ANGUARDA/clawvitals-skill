@@ -1,8 +1,8 @@
 # ClawVitals Plugin
 
-Programmatic security health check for self-hosted [OpenClaw](https://openclaw.ai) installations. Recurring posture tracking, delta detection, and regression-aware alerting.
+Security vitals checker for self-hosted [OpenClaw](https://openclaw.ai) installations. Recurring security checks, scan history, delta detection, and regression-aware alerting.
 
-> This is the **plugin** — the stateful, scheduled, telemetry-enabled upgrade from the [ClawVitals Skill](https://clawhub.com/skills/clawvitals). If both are installed, the plugin runs by default.
+> This is the **plugin** — the stateful, scheduled, telemetry-enabled upgrade from the [ClawVitals Skill](https://clawhub.ai/bk-cm/clawvitals).
 
 ---
 
@@ -12,7 +12,7 @@ Programmatic security health check for self-hosted [OpenClaw](https://openclaw.a
 - [Install](#install)
 - [Uninstall](#uninstall)
 - [Commands](#commands)
-- [Running ClawVitals — skill vs plugin](#running-clawvitals--skill-vs-plugin)
+- [Agent tools](#agent-tools)
 - [Standard vs Expanded controls](#standard-vs-expanded-controls)
 - [Example output](#example-output)
 - [Regression alerts](#regression-alerts)
@@ -41,7 +41,7 @@ The **plugin** is the upgrade path. It adds everything the skill deliberately om
 | Recurring scheduled scans | ❌ | ✅ |
 | Regression + critical alerts | ❌ | ✅ |
 | Exclusion management | ❌ | ✅ |
-| Posture trend on dashboard | ❌ | ✅ |
+| Scan history on dashboard (coming soon) | ❌ | ✅ |
 | Fleet management (alias) | ❌ | ✅ |
 | Telemetry | none | **on by default (opt-out)** |
 
@@ -49,69 +49,25 @@ The **plugin** is the upgrade path. It adds everything the skill deliberately om
 
 ## Install
 
-ClawVitals Plugin is published on [ClawHub](https://clawhub.com) _(exact listing URL TBD)_.
-
-### Step-by-step
-
-**1. Install the plugin via ClawHub:**
+ClawVitals Plugin is published on [ClawHub](https://clawhub.ai/plugins/claw-security-vitals).
 
 ```bash
-npx clawhub install clawvitals --plugin
+openclaw plugins install clawhub:claw-security-vitals
 ```
 
-Or in your OpenClaw messaging surface (Slack, iMessage, etc.):
-
-```
-install clawvitals plugin
-```
-
-**2. Confirm the installation:**
-
-```
-clawvitals version
-```
-
-Expected output:
-
-```
-ClawVitals Plugin v0.1.0 🔌
-Control Library v0.1.0
-OpenClaw 2026.3.13 (61d171a)
-```
-
-**3. Run your first scan:**
+After installing, run your first scan:
 
 ```
 run clawvitals
 ```
 
-On first run, you will be prompted to set a scan schedule (daily, weekly, monthly, or manual only). You can skip this and configure it later with `clawvitals set schedule`.
-
 ---
 
 ## Uninstall
 
-**1. Remove the scheduled scan (if configured):**
-
-```
-clawvitals set schedule none
-```
-
-This removes the `clawvitals:scheduled-scan` cron job from your OpenClaw installation.
-
-**2. Uninstall the plugin via ClawHub:**
-
 ```bash
-npx clawhub uninstall clawvitals --plugin
+openclaw plugins uninstall claw-security-vitals
 ```
-
-Or in your OpenClaw messaging surface:
-
-```
-uninstall clawvitals plugin
-```
-
-**3. Confirm removal:**
 
 After uninstalling, `run clawvitals` will fall back to the skill if it is still installed, or return a "not found" error if neither is installed.
 
@@ -121,53 +77,38 @@ After uninstalling, `run clawvitals` will fall back to the skill if it is still 
 
 ## Commands
 
+These are chat commands you type directly in your OpenClaw messaging surface:
+
 | Command | Description |
 |---|---|
 | `run clawvitals` | Run a full security scan (standard controls) |
 | `run clawvitals --expanded` | Run scan with expanded system-level controls (see [expanded controls](#standard-vs-expanded-controls)) |
 | `run clawvitals --standard` | Run scan with standard controls only (explicit) |
-| `run clawvitals --plugin` | Force the plugin to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
-| `run clawvitals --skill` | Force the skill to run (see [skill vs plugin](#running-clawvitals--skill-vs-plugin)) |
 | `show clawvitals details` | Full report with all findings and remediation steps |
-| `show clawvitals identity` | Show install UUID, alias, and dashboard link |
-| `clawvitals version` | Show plugin version, control library version, and OpenClaw version |
 | `clawvitals status` | Show last scan time, score, schedule, and trial/plan status |
-| `clawvitals set schedule <cadence>` | Configure recurring scan cadence |
-| `clawvitals set alias <name>` | Set a friendly name for this host in reports and dashboard |
-| `clawvitals exclude <control-id> <reason>` | Suppress a finding with a reason |
-| `clawvitals exclusions` | List all active exclusions |
-| `clawvitals set mode standard\|expanded` | Set default control set for all future scans |
-| `clawvitals telemetry on\|off` | Enable or disable telemetry |
-| `clawvitals trial` | Show trial status and upgrade options |
-| `clawvitals upgrade` | Upgrade to a paid plan |
-| `clawvitals configure webhook` | Set up a webhook for alert delivery |
+| `clawvitals help` | Show command reference |
 
 ---
 
-## Running ClawVitals — skill vs plugin
+## Agent tools
 
-If both the **ClawVitals Skill** and the **ClawVitals Plugin** are installed, **the plugin takes priority by default.** The plugin header in the output makes it clear which one ran.
+The following tools are invoked by the agent (not typed as chat commands). You can trigger them via natural language — for example, say "set clawvitals schedule to daily" and the agent will call the appropriate tool.
 
-### Override switches
-
-To explicitly choose which runs, use the `--plugin` or `--skill` flag:
-
-```
-run clawvitals --plugin    # force plugin (explicit)
-run clawvitals --skill     # force skill (fallback to instruction-only mode)
-```
-
-These flags work regardless of which is installed — if you force `--skill` but only the plugin is installed (or vice versa), you'll get an error.
-
-### How to tell which ran
-
-Every plugin scan starts with a versioned header:
-
-```
-ClawVitals Plugin v0.1.0 🔌
-```
-
-The skill does not emit this header. If you don't see it, the skill ran.
+| Tool | Description |
+|---|---|
+| `clawvitals_set_alias` | Set a friendly name for this host in reports and dashboard |
+| `clawvitals_show_identity` | Show install UUID, alias, and dashboard link |
+| `clawvitals_telemetry` | Enable or disable telemetry |
+| `clawvitals_set_schedule` | Configure recurring scan cadence |
+| `clawvitals_status` | Show current status |
+| `clawvitals_trial_status` | Show trial status and upgrade options |
+| `clawvitals_upgrade` | Upgrade to a paid plan |
+| `clawvitals_configure_webhook` | Set up a webhook for alert delivery |
+| `clawvitals_exclude` | Suppress a finding with a reason |
+| `clawvitals_list_exclusions` | List all active exclusions |
+| `clawvitals_remove_exclusion` | Remove an exclusion |
+| `clawvitals_get_report` | Retrieve a scan report |
+| `clawvitals_approve_cognitive_file` | Approve a cognitive file |
 
 ---
 
@@ -184,14 +125,7 @@ run clawvitals --expanded         # one-off expanded scan
 run clawvitals --standard         # one-off standard scan (explicit default)
 ```
 
-Or set it as your default in config:
-
-```
-clawvitals set mode expanded      # all future scans use expanded controls
-clawvitals set mode standard      # revert to standard (default)
-```
-
-Or via `openclaw.plugin.json`:
+Or set it as your default via `openclaw.plugin.json`:
 ```json
 {
   "controls": { "mode": "expanded" }
@@ -218,7 +152,7 @@ All expanded checks are **read-only** — nothing is modified. See [SECURITY.md]
 When expanded mode runs, the report clearly labels the section:
 
 ```
-ClawVitals Plugin v0.1.0 🔌  ·  Expanded Scan
+ClawVitals Plugin v1.0.1 🔌  ·  Expanded Scan
 
 ━━━ STANDARD CONTROLS ━━━━━━━━━━━━━━━━━━━━━
 [standard control results — see example output below]
@@ -255,7 +189,7 @@ Expanded score: 2 new findings  ·  6 passed
 ### Summary message (after `run clawvitals`)
 
 ```
-ClawVitals Plugin v0.1.0 🔌
+ClawVitals Plugin v1.0.1 🔌
 
 🔴 Security Score: 58 / 100  ·  RED
 Host: mac-mini-home  ·  Scanned: 2026-04-15 15:38 BST
@@ -264,28 +198,28 @@ Findings: 2 Critical  ·  1 High  ·  1 Medium
 Delta: ▲ 1 new finding since last scan (2026-04-08)
 
 ─────────────────────────────────────────
-CRITICAL  NC-GW-001  Gateway auth disabled
+CRITICAL  NC-OC-012  Gateway auth disabled
 CRITICAL  NC-OC-003  Command policy: deny-only mode
 HIGH      NC-VERS-001  OpenClaw update available (2026.3.13 → 2026.4.1)
 MEDIUM    NC-OC-008  Channel health degraded
 
 ▶ Reply "show clawvitals details" for full report with remediation steps.
-📈 Track your posture over time → https://dashboard.clawvitals.io
+📈 Track your scans → https://clawvitals.io/dashboard
 ```
 
 ### Full details (after `show clawvitals details`)
 
 ```
-ClawVitals Plugin v0.1.0 🔌  ·  Full Report
-Host: mac-mini-home  ·  Control Library v0.1.0  ·  OpenClaw 2026.3.13
+ClawVitals Plugin v1.0.1 🔌  ·  Full Report
+Host: mac-mini-home  ·  Control Library v1.0.1  ·  OpenClaw 2026.3.13
 
 ━━━ CRITICAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[NC-GW-001] Gateway auth disabled
+[NC-OC-012] Gateway auth disabled
 Severity: Critical  ·  Source: security_audit (authoritative)
 Evidence: groups[0].auth.type = "none"
 Fix: openclaw gateway auth set --type bearer --token <your-token>
-Docs: https://clawvitals.io/docs/NC-GW-001
+Docs: https://clawvitals.io/docs/NC-OC-012
 
 [NC-OC-003] Command policy: deny-only mode
 Severity: Critical  ·  Source: security_audit (authoritative)
@@ -328,18 +262,10 @@ No resolved findings since last scan.
 Run files saved to: ~/.openclaw/workspace/clawvitals/runs/2026-04-15T15-38-00Z/
 ```
 
-### `clawvitals version` output
-
-```
-ClawVitals Plugin v0.1.0 🔌
-Control Library v0.1.0
-OpenClaw 2026.3.13 (61d171a)
-```
-
 ### `clawvitals status` output
 
 ```
-ClawVitals Plugin v0.1.0 🔌
+ClawVitals Plugin v1.0.1 🔌
 
 Last scan:   2026-04-15 15:38 BST
 Score:       58 / 100  🔴 RED
@@ -358,7 +284,7 @@ When a **scheduled scan** detects new Critical or High findings that were not pr
 ### Alert format
 
 ```
-⚠️ ClawVitals Plugin v0.1.0 🔌 — Regression Detected
+⚠️ ClawVitals Plugin v1.0.1 🔌 — Regression Detected
 
 Host: mac-mini-home  ·  Scanned: 2026-04-15 08:00 BST
 Score: 58 → 51  🔴 RED  (▼ 7 points)
@@ -366,10 +292,10 @@ Score: 58 → 51  🔴 RED  (▼ 7 points)
 1 new Critical finding, 1 new High finding.
 
 ─────────────────────────────────────────
-🔴 CRITICAL  NC-GW-001  Gateway auth disabled
+🔴 CRITICAL  NC-OC-012  Gateway auth disabled
 Evidence: groups[0].auth.type = "none"
 Fix: openclaw gateway auth set --type bearer --token <your-token>
-→ https://clawvitals.io/docs/NC-GW-001
+→ https://clawvitals.io/docs/NC-OC-012
 
 🟠 HIGH  NC-VERS-001  OpenClaw update available (2026.3.13 → 2026.4.1)
 Evidence: current=2026.3.13, latest=2026.4.1, channel=stable
@@ -389,45 +315,33 @@ Reply "show clawvitals details" for remediation steps on all findings.
 - If no new Critical/High findings, scheduled scans run **silently** — no message is sent.
 - On the **first ever scan** (no prior baseline), all findings are treated as new and the full report is sent.
 - Alerts are delivered via your primary OpenClaw messaging surface (e.g. Slack). If delivery fails, the plugin retries once. If the retry also fails, the failure is logged to the run file — the scan is not marked as failed.
-- To route alerts to a webhook instead (or in addition), use `clawvitals configure webhook`.
+- To route alerts to a webhook instead (or in addition), use the `clawvitals_configure_webhook` agent tool.
 
 ### Delivery channels
 
 | Channel | Configured by |
 |---|---|
 | OpenClaw messaging surface (default) | Automatic |
-| Webhook (Slack, Discord, Teams, etc.) | `clawvitals configure webhook` |
+| Webhook (Slack, Discord, Teams, etc.) | `clawvitals_configure_webhook` agent tool |
 | Email digest | Phase 2 (not yet available) |
 
 ---
 
 ## Scheduling
 
-On first run you'll be offered a schedule:
+Configure the scan schedule via the `clawvitals_set_schedule` agent tool, or say something like "set clawvitals schedule to daily" in natural language. The default cron schedule is 9 AM daily.
 
-1. Daily (8am local time)
-2. Weekly (Monday 8am local time)
-3. Monthly (1st of month, 8am)
-4. Manual only
-
-Change it any time:
-
-```
-clawvitals set schedule weekly
-clawvitals set schedule daily
-clawvitals set schedule monthly
-clawvitals set schedule none
-```
+Available cadences: daily, weekly, monthly, or none (manual only).
 
 ---
 
 ## Fleet Management
 
-Give each installation a human-readable alias for the dashboard:
+Give each installation a human-readable alias for the dashboard using the `clawvitals_set_alias` agent tool. For example, say:
 
 ```
-set clawvitals alias prod-server-1
-set clawvitals alias dev-laptop
+set alias for clawvitals to prod-server-1
+set alias for clawvitals to dev-laptop
 ```
 
 The alias is **always user-set** — never derived from the machine hostname, username, or any system identifier. Each installation also has a random UUID generated at install time (`iid`). The dashboard shows both:
@@ -438,33 +352,30 @@ dev-laptop      (iid: 7c1b...)   70/100  🟡  last scan: 1d ago
 <unnamed>       (iid: 9e4d...)   45/100  🔴  last scan: 3d ago
 ```
 
-To view your current install identity:
-
-```
-show clawvitals identity
-```
+To view your current install identity, use the `clawvitals_show_identity` agent tool.
 
 Output:
 
 ```
-ClawVitals Plugin v0.1.0 🔌
+ClawVitals Plugin v1.0.1 🔌
 
 Install ID (iid): a3f2c8e1-...
 Alias:            prod-server-1
-Dashboard:        https://dashboard.clawvitals.io
+Dashboard:        https://clawvitals.io/dashboard
 ```
 
 ---
 
 ## Exclusion management
 
-Suppress findings that are intentional or not applicable to your setup:
+Suppress findings that are intentional or not applicable to your setup using the `clawvitals_exclude` agent tool. For example:
 
 ```
-clawvitals exclude NC-OC-005 reason "personal assistant setup"
-clawvitals exclude NC-AUTH-001 reason "no reverse proxy, local-only" expires 2026-09-01
-clawvitals exclusions
+exclude NC-OC-005 from clawvitals because "personal assistant setup"
+exclude NC-AUTH-001 from clawvitals because "no reverse proxy, local-only" expires 2026-09-01
 ```
+
+To list exclusions, use the `clawvitals_list_exclusions` agent tool. To remove one, use `clawvitals_remove_exclusion`.
 
 Exclusions are stored in `~/.openclaw/workspace/clawvitals/exclusions.json` (mode 600). They appear as `EXCLUDED` in scan reports — never silently hidden. Expired exclusions are automatically inactivated on the next scan.
 
@@ -489,11 +400,7 @@ The plugin defaults telemetry **on**. This is intentional: the plugin exists to 
 - OpenClaw config, tokens, credentials, or secrets
 - Any machine-derived identifier
 
-**Opt out at any time:**
-
-```
-clawvitals telemetry off
-```
+**Opt out at any time** using the `clawvitals_telemetry` agent tool, or say "turn off clawvitals telemetry".
 
 ---
 
@@ -559,10 +466,11 @@ plugin/
 ## Links
 
 - [clawvitals.io](https://clawvitals.io)
-- [Dashboard](https://dashboard.clawvitals.io)
+- [Dashboard](https://clawvitals.io/dashboard)
 - [Docs](https://clawvitals.io/docs)
 - [Controls reference](https://clawvitals.io/docs/controls)
-- [ClawHub listing](https://clawhub.com) _(exact URL TBD)_
+- [ClawHub plugin listing](https://clawhub.ai/plugins/claw-security-vitals)
+- [GitHub](https://github.com/ANGUARDA/clawvitals)
 
 ---
 

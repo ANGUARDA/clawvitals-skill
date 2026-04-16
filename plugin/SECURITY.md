@@ -47,7 +47,7 @@ The telemetry endpoint URL is configurable (`telemetry.endpoint` in plugin confi
 
 ## Filesystem access
 
-The plugin reads and writes **only** within `~/.openclaw/workspace/clawvitals/`:
+In standard mode, the plugin reads and writes only within `~/.openclaw/workspace/clawvitals/`. In expanded mode (`run clawvitals --expanded`), additional home directory files are read for the system-level checks described below.
 
 | Path | Access | Purpose |
 |---|---|---|
