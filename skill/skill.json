@@ -1,9 +1,9 @@
 {
   "name": "clawvitals",
-  "version": "1.4.3",
+  "version": "1.4.6",
   "always": false,
   "displayName": "ClawVitals",
-  "description": "Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.",
+  "description": "Security health check for self-hosted OpenClaw. Detects misconfigurations, exposed ports, weak auth, outdated versions, and more. Scores your setup with a RAG band and shows exactly what to fix. First scan in 30 seconds.",
   "author": "Anguarda",
   "license": "MIT",
   "homepage": "https://clawvitals.io",
@@ -39,12 +39,18 @@
   ],
   "tags": [
     "security",
-    "audit",
+    "security-audit",
+    "security-check",
     "health-check",
-    "openclaw",
+    "hardening",
+    "misconfiguration",
+    "vulnerability",
+    "posture",
     "monitoring",
+    "openclaw",
     "vitals",
-    "security-vitals"
+    "security-vitals",
+    "self-hosted"
   ],
   "metadata": {
     "openclaw": {

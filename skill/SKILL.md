@@ -1,9 +1,9 @@
 ---
 name: clawvitals
 displayName: ClawVitals
-description: Security vitals checker for OpenClaw. Scans your installation, scores your setup, and shows you exactly what to fix. First scan in seconds.
+description: Security health check for self-hosted OpenClaw. Detects misconfigurations, exposed ports, weak auth, outdated versions, and more. Scores your setup with a RAG band and shows exactly what to fix. First scan in 30 seconds.
 homepage: https://clawvitals.io
-tags: [security, audit, health-check, openclaw, monitoring, vitals, security-vitals]
+tags: [security, security-audit, security-check, health-check, hardening, misconfiguration, vulnerability, posture, monitoring, openclaw, vitals, security-vitals, self-hosted]
 metadata: {"openclaw": {"requires": {"bins": ["openclaw", "node"]}, "minVersion": "2026.3.0"}}
 ---
 
