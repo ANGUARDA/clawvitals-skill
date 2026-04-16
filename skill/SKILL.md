@@ -11,7 +11,7 @@ metadata: {"openclaw": {"requires": {"bins": ["openclaw", "node"]}, "minVersion"
 
 Security health check for self-hosted OpenClaw installations. Evaluates 9 scored stable controls and 6 experimental controls, gives your setup a RAG band, and tells you exactly what to fix.
 
-**This skill is stateless and does not store scan history. The skill itself makes no network calls. Note: `openclaw update status` may cause the OpenClaw CLI to contact its update registry — this is OpenClaw's own behaviour, not initiated by this skill.**
+**This skill is stateless and does not store scan history. This skill makes no direct network calls and declares no network permissions. Note: one of the five CLI commands this skill runs — `openclaw update status` — may cause the OpenClaw CLI itself to contact its update registry. This is OpenClaw's own behaviour, not a network call made by this skill.**
 
 > This skill performs point-in-time checks only. Scan history, recurring monitoring, and the clawvitals.io/dashboard are part of the ClawVitals plugin — see clawvitals.io/plugin.
 
@@ -40,7 +40,7 @@ If any command fails or returns unparseable output: skip all controls that depen
 ```
 openclaw security audit --json
 ```
-Extract only: `findings[].checkId` and `findings[].detail` (for the `summary.attack_surface` finding only). Discard all other fields. Do not display any finding detail text in your response.
+Extract only: `findings[].checkId` and `findings[].detail` (for the `summary.attack_surface` finding only). Discard all other fields. Do not display raw `detail` field text in your response — the permitted display values for each finding are defined explicitly in the control evaluation steps below, and only those values may be shown to the user.
 
 **Health check:**
 ```
@@ -345,7 +345,7 @@ Running your first scan now...
 - `openclaw update status --json`
 - `node --version`
 
-**Network access:** This skill makes no network calls and declares no network permissions. Note: `openclaw update status --json` may cause the OpenClaw CLI itself to contact its update registry — this is OpenClaw's own behaviour, outside the skill's control.
+**Network access:** This skill makes no direct network calls and declares no network permissions. One of the five CLI commands this skill runs — `openclaw update status --json` — may cause the OpenClaw CLI itself to contact its update registry. This is OpenClaw's own behaviour, outside the skill's control. If a fully offline scan is required, omit or skip the update status step.
 
 **Local storage:** Nothing is stored. This skill is stateless and does not store scan history.
 
